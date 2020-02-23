@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/overtalk/shm"
 )
+
 type LogItem struct {
 	ProtocolName string
 	Fields       []string
@@ -14,8 +15,8 @@ func testConstructor() interface{} {
 	return &LogItem{}
 }
 
-func main(){
-	s, err := shm.NewShm(6, 10000, testConstructor)
+func main() {
+	s, err := shm.NewMultiShm(6, 10000, testConstructor)
 	if err != nil {
 		fmt.Println(err)
 		return

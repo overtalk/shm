@@ -3,54 +3,67 @@ package shm
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/overtalk/shm/queue"
 )
 
 type ConstructorFunc func() interface{}
 
+type shmQueue interface {
+	Save(buf []byte) error
+	Get() ([][]byte, error)
+}
+
 type SHM struct {
-	s           *shm
+	shmQueue    shmQueue
 	constructor ConstructorFunc
 }
 
-func NewShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
-	s, err := newShm(key, size)
+func NewSingleShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
+	s, err := queue.NewRingQueue(key, size)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SHM{
-		s:           s,
+		shmQueue:    s,
 		constructor: constructor,
 	}, nil
 }
 
-func (s *SHM) Save(i ...interface{}) error {
-	var toSave []byte
-	for _, v := range i {
-		buf := new(bytes.Buffer)
-		enc := gob.NewEncoder(buf)
-		err := enc.Encode(v)
-		if err != nil {
-			return err
-		}
-
-		toSave = append(toSave, newBinaryMessage(buf.Bytes()).serialize()...)
-	}
-
-	return s.s.save(toSave)
-}
-
-func (s *SHM) Get() ([]interface{}, error) {
-	var ret []interface{}
-
-	binaryMessages, err := deserializeSlice(s.s.get())
+func NewMultiShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
+	s, err := queue.NewMultiQueue(key, size)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, bm := range binaryMessages {
+	return &SHM{
+		shmQueue:    s,
+		constructor: constructor,
+	}, nil
+}
+
+func (s *SHM) Save(i interface{}) error {
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	err := enc.Encode(i)
+	if err != nil {
+		return err
+	}
+
+	return s.shmQueue.Save(buf.Bytes())
+}
+
+func (s *SHM) Get() ([]interface{}, error) {
+	data, err := s.shmQueue.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []interface{}
+
+	for _, v := range data {
 		temp := s.constructor()
-		if err = gob.NewDecoder(bytes.NewBuffer(bm.Body)).Decode(temp); err != nil {
+		if err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(temp); err != nil {
 			return nil, err
 		}
 

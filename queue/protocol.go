@@ -1,4 +1,4 @@
-package shm
+package queue
 
 import (
 	"bytes"
