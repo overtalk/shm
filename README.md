@@ -2,6 +2,13 @@
 
 - `goalng` 中使用共享内存
 
+## 简介
+- 本仓库使用的是 `shm` 共享内存而非 `mmap`
+- 本仓库提供了两个共享内存的构造函数
+    - NewSingleShm ： 只可以是一个生产者 & 一个消费者
+    - NewMultiShm ： 可以 多个生产者 & 一个消费者
+- 具体的实现思路请见[连接](https://cloud.tencent.com/developer/article/1006241)，在此也感谢作者
+  
 ## 安装
 ```bash
 go get github.com/overtalk/shm
@@ -26,8 +33,8 @@ func testConstructor() interface{} {
 	return &LogItem{}
 }
 
-func main(){
-	s, err := shm.NewShm(6, 10000, testConstructor)
+func main() {
+	s, err := shm.NewMultiShm(6, 10000, testConstructor)
 	if err != nil {
 		fmt.Println(err)
 		return
