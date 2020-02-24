@@ -7,7 +7,8 @@
 - 本仓库提供了两个共享内存的构造函数
     - NewSingleShm ： 只可以是一个生产者 & 一个消费者
     - NewMultiShm ： 可以 多个生产者 & 一个消费者
-- 具体的实现思路请见[连接](https://cloud.tencent.com/developer/article/1006241)，在此也感谢作者
+- 具体的实现思路是基于[范健的这篇分享](https://cloud.tencent.com/developer/article/1006241)，在此也感谢作者
+- 上述分享主要是一个无锁队列的实现，我在此基础上套上了一层共享内存
   
 ## 安装
 ```bash
