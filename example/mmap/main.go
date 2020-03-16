@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/overtalk/shm"
 )
 
@@ -16,7 +18,12 @@ func testConstructor() interface{} {
 }
 
 func main() {
-	s, err := shm.NewMultiShm(6, 10000, testConstructor)
+	mem, err := shm.NewMMapMem("./test.txt", 10000)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s, err := shm.NewMultiShm(mem, 10000, testConstructor)
 	if err != nil {
 		fmt.Println(err)
 		return

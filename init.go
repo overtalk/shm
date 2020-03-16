@@ -3,6 +3,8 @@ package shm
 import (
 	"bytes"
 	"encoding/gob"
+
+	"github.com/overtalk/shm/model"
 	"github.com/overtalk/shm/queue"
 )
 
@@ -18,8 +20,8 @@ type SHM struct {
 	constructor ConstructorFunc
 }
 
-func NewSingleShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
-	s, err := queue.NewRingQueue(key, size)
+func NewSingleShm(shm *model.Mem, size int, constructor ConstructorFunc) (*SHM, error) {
+	s, err := queue.NewRingQueue(shm, size)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +32,8 @@ func NewSingleShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
 	}, nil
 }
 
-func NewMultiShm(key, size int, constructor ConstructorFunc) (*SHM, error) {
-	s, err := queue.NewMultiQueue(key, size)
+func NewMultiShm(shm *model.Mem, size int, constructor ConstructorFunc) (*SHM, error) {
+	s, err := queue.NewMultiQueue(shm, size)
 	if err != nil {
 		return nil, err
 	}

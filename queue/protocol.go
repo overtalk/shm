@@ -7,9 +7,7 @@ import (
 	"io"
 )
 
-const (
-	bodyLen = 4
-)
+const bodyLen = 4
 
 // binaryMessage describes binary message
 type binaryMessage struct {

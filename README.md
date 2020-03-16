@@ -3,10 +3,14 @@
 - `golang` 中使用共享内存
 
 ## 简介
-- 本仓库使用的是 `shm` 共享内存而非 `mmap`
-- 本仓库提供了两个共享内存的构造函数
-    - NewSingleShm ： 只可以是一个生产者 & 一个消费者
-    - NewMultiShm ： 可以 多个生产者 & 一个消费者
+- 支持的共享内存类型
+    - systemV 
+    - mmap
+    
+- 两种应用场景
+    - 只可以是一个生产者 & 一个消费者（NewSingleShm 构造函数）
+    - 可以 多个生产者 & 一个消费者（NewMultiShm 构造函数）
+    
 - 具体的实现思路是基于[范健的这篇分享](https://cloud.tencent.com/developer/article/1006241)，在此也感谢作者
 - 上述分享主要是一个无锁队列的实现，我在此基础上套上了一层共享内存
   
@@ -16,11 +20,29 @@ go get github.com/overtalk/shm
 ```
 
 ## 使用
+### 创建共享内存块
+```go
+// system V
+mem, err := shm.NewSystemVMem(6, 10000)
+if err != nil {
+    log.Fatal(err)
+}
+
+// mmap
+mem, err := shm.NewMMapMem("./test.txt", 10000)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### 使用
 ```go
 package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/overtalk/shm"
 )
 
@@ -35,7 +57,14 @@ func testConstructor() interface{} {
 }
 
 func main() {
-	s, err := shm.NewMultiShm(6, 10000, testConstructor)
+    // 构造共享内存块
+    // 如果需要使用 mmap 共享内存，使用 NewMMapMem 构造方法即可
+	mem, err := shm.NewSystemVMem(6, 10000)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s, err := shm.NewMultiShm(mem, 10000, testConstructor)
 	if err != nil {
 		fmt.Println(err)
 		return

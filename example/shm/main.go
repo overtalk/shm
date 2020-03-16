@@ -1,54 +1,34 @@
-package shm_test
+package main
 
 import (
 	"fmt"
 	"log"
-	"testing"
 
 	"github.com/overtalk/shm"
 )
 
-// LogItem defines one log record
 type LogItem struct {
 	ProtocolName string
 	Fields       []string
 	Data         []interface{}
 }
 
-func LogItemConstructor() interface{} {
+func testConstructor() interface{} {
 	return &LogItem{}
 }
 
-func TestSingleShm(t *testing.T) {
+func main() {
 	mem, err := shm.NewSystemVMem(6, 10000)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s, err := shm.NewSingleShm(mem, 10000, LogItemConstructor)
+	s, err := shm.NewMultiShm(mem, 10000, testConstructor)
 	if err != nil {
-		t.Error(err)
+		fmt.Println(err)
 		return
 	}
 
-	details(t, s)
-}
-
-func TestMultiShm(t *testing.T) {
-	mem, err := shm.NewSystemVMem(7, 10000)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s, err := shm.NewMultiShm(mem, 10000, LogItemConstructor)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	details(t, s)
-}
-
-func details(t *testing.T, s *shm.SHM) {
 	for i := 0; i < 10; i++ {
 		item := &LogItem{
 			ProtocolName: "1",
@@ -56,14 +36,14 @@ func details(t *testing.T, s *shm.SHM) {
 			Data:         []interface{}{i},
 		}
 		if err := s.Save(item); err != nil {
-			t.Error(err)
+			fmt.Println(err)
 			return
 		}
 	}
 
 	items, err := s.Get()
 	if err != nil {
-		t.Error(err)
+		fmt.Println(err)
 		return
 	}
 

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync/atomic"
 	"time"
+
+	"github.com/overtalk/shm/model"
 )
 
 type MultiQueue struct {
@@ -12,18 +14,17 @@ type MultiQueue struct {
 	// IsEmpty ： readIndex = writeIndex
 	// IsFull：readIndex + writeIndex = queueLen
 	queueLen int32
-	shm      *shmMem
+	shm      *model.Mem
 }
 
-func NewMultiQueue(key, size int) (*MultiQueue, error) {
-	s, err := newShmMem(key, size)
-	if err != nil {
-		return nil, err
+func NewMultiQueue(shm *model.Mem, size int) (*MultiQueue, error) {
+	if len(shm.Queue) != size {
+		return nil, errors.New("unmatched size and shm")
 	}
 
 	return &MultiQueue{
 		queueLen: int32(size),
-		shm:      s,
+		shm:      shm,
 	}, nil
 }
 
@@ -39,10 +40,10 @@ func (multiArray *MultiQueue) Save(buf []byte) error {
 	// modify the writeIndex
 	_, currentWriteIndex, usedLen := multiArray.getUsedLen()
 	if usedLen+displacement > multiArray.queueLen-1 {
-		return ErrOutOfCapacity
+		return model.ErrOutOfCapacity
 	}
 
-	if !atomic.CompareAndSwapInt32(&multiArray.shm.writeIndex, currentWriteIndex, (currentWriteIndex+displacement)%multiArray.queueLen) {
+	if !atomic.CompareAndSwapInt32(&multiArray.shm.WriteIndex, currentWriteIndex, (currentWriteIndex+displacement)%multiArray.queueLen) {
 		return errors.New("failed to swap")
 	}
 
@@ -81,8 +82,8 @@ func (multiArray *MultiQueue) Get() ([][]byte, error) {
 
 // getUsedLen return currentReadIndex, currentWriteIndex, usedLen
 func (multiArray *MultiQueue) getUsedLen() (int32, int32, int32) {
-	currentWriteIndex := atomic.LoadInt32(&multiArray.shm.writeIndex)
-	currentReadIndex := atomic.LoadInt32(&multiArray.shm.readIndex)
+	currentWriteIndex := atomic.LoadInt32(&multiArray.shm.WriteIndex)
+	currentReadIndex := atomic.LoadInt32(&multiArray.shm.ReadIndex)
 	var usedLen int32
 	if currentWriteIndex >= currentReadIndex {
 		usedLen = currentWriteIndex - currentReadIndex
@@ -96,10 +97,10 @@ func (multiArray *MultiQueue) getUsedLen() (int32, int32, int32) {
 // writeBlock is to write block details to queue
 func (multiArray *MultiQueue) writeBlock(startIndex int, b *block) {
 	for index, bit := range b.serialize() {
-		multiArray.shm.queue[startIndex+index] = bit
+		multiArray.shm.Queue[startIndex+index] = bit
 	}
 
-	multiArray.shm.queue[startIndex] = 1
+	multiArray.shm.Queue[startIndex] = 1
 }
 
 // writeBlock is to get block details from queue
@@ -107,10 +108,10 @@ func (multiArray *MultiQueue) getBlock(startIndex int) *block {
 	var data []byte
 	endIndex := startIndex + int(blockSize)
 	if endIndex < int(multiArray.queueLen) {
-		data = multiArray.shm.queue[startIndex:endIndex]
+		data = multiArray.shm.Queue[startIndex:endIndex]
 	} else {
-		data = append(data, multiArray.shm.queue[startIndex:]...)
-		data = append(data, multiArray.shm.queue[:endIndex-int(multiArray.queueLen)]...)
+		data = append(data, multiArray.shm.Queue[startIndex:]...)
+		data = append(data, multiArray.shm.Queue[:endIndex-int(multiArray.queueLen)]...)
 	}
 
 	b, _ := newBlockFromBytes(data)
