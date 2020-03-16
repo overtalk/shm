@@ -3,6 +3,7 @@ package queue
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"syscall"
 	"unsafe"
 )
@@ -15,10 +16,14 @@ const (
 
 var ErrOutOfCapacity = errors.New("out of capacity")
 
-type shmMem struct {
+type tag struct {
 	readIndex  int32
 	writeIndex int32
-	queue      [maxCapacity]byte
+}
+
+type shmMem struct {
+	*tag
+	queue []byte
 }
 
 func newShmMem(key, size int) (*shmMem, error) {
@@ -36,6 +41,16 @@ func newShmMem(key, size int) (*shmMem, error) {
 		return nil, fmt.Errorf("syscall error, err: %d\n", errCode)
 	}
 
-	s := (*shmMem)(unsafe.Pointer(shmAddr))
-	return s, nil
+	tag := (*tag)(unsafe.Pointer(shmAddr))
+
+	var data []byte
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	sh.Data = shmAddr + 8
+	sh.Len = size
+	sh.Cap = size
+
+	return &shmMem{
+		tag:   tag,
+		queue: data,
+	}, nil
 }
