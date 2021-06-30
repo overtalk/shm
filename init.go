@@ -87,7 +87,7 @@ func (s *SHM) GetByIndex(index uint64) (interface{}, error) {
 			return nil, err
 		}
 
-		if(index == k) {
+		if index == k {
 			return temp, err
 		}
 	}
