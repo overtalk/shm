@@ -80,22 +80,17 @@ func (s *SHM) GetByIndex(index uint64) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var ret []interface{}
-
-	var pos uint64 = 0
-	for _, v := range data {
+	for k, v := range data {
 		temp := s.constructor()
-		if err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(temp); err != nil {
+		err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(temp)
+		if err != nil {
 			return nil, err
 		}
 
-		if(index == pos)
-		{
-			return temp,err
+		if(index == k) {
+			return temp, err
 		}
-		pos +=1
 	}
 
-	return ret, nil
+	return nil, nil
 }
