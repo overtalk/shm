@@ -2,7 +2,7 @@ package shm
 
 import (
 	"fmt"
-	"github.com/overtalk/shm/model"
+	"github.com/kevinu2/shm/model"
 	"reflect"
 	"syscall"
 	"unsafe"
