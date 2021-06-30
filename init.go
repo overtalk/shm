@@ -74,3 +74,28 @@ func (s *SHM) Get() ([]interface{}, error) {
 
 	return ret, nil
 }
+
+func (s *SHM) GetByIndex(index uint64) (interface{}, error) {
+	data, err := s.shmQueue.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []interface{}
+
+	var pos uint64 = 0
+	for _, v := range data {
+		temp := s.constructor()
+		if err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(temp); err != nil {
+			return nil, err
+		}
+
+		if(index == pos)
+		{
+			return temp,err
+		}
+		pos +=1
+	}
+
+	return ret, nil
+}
