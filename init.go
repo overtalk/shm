@@ -75,7 +75,7 @@ func (s *SHM) Get() ([]interface{}, error) {
 	return ret, nil
 }
 
-func (s *SHM) GetByIndex(index uint64) (interface{}, error) {
+func (s *SHM) GetByIndex(index int) (interface{}, error) {
 	data, err := s.shmQueue.Get()
 	if err != nil {
 		return nil, err
