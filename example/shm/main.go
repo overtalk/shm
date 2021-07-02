@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/kevinu2/shm"
+	"github.com/kevinu2/shm/shmdata"
+	"log"
 )
 
 type LogItem struct {
@@ -18,6 +18,13 @@ func testConstructor() interface{} {
 }
 
 func main() {
+
+	shmi, err := shmdata.GetShareMemoryInfo(999999)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(shmi)
+
 	mem, err := shm.NewSystemVMem(6, 10000)
 	if err != nil {
 		log.Fatal(err)

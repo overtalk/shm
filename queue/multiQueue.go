@@ -73,10 +73,8 @@ func (multiArray *MultiQueue) Get() ([][]byte, error) {
 		return nil, errors.New("get error : usedLen is not n * blockSize")
 	}
 	blockCount := int(usedLen) / int(blockSize)
-
 	// parse all blocks
 	blocks := multiArray.getBlocks(currentReadIndex, blockCount)
-
 	return multiArray.parseBlocks(blocks)
 }
 
@@ -126,7 +124,6 @@ func (multiArray *MultiQueue) getBlocks(startIndex int32, blockCount int) []*blo
 		blocks = append(blocks, multiArray.getBlock(int(startIndex)))
 		startIndex += int32(blockSize)
 	}
-
 	return blocks
 }
 
