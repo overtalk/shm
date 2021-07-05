@@ -1,6 +1,7 @@
 package shmdata
 
 import (
+	"fmt"
 	"github.com/kevinu2/shm"
 	"unsafe"
 )
@@ -37,8 +38,9 @@ type tagTLV struct {
 
 func GetShareMemoryInfo(defaultKey int) (SHMInfo, error) {
 	var shmi SHMInfo
-	len := unsafe.Sizeof(shmi)
-	sh, err := shm.GetSHMInfo(defaultKey, int(len))
+	shmilen := unsafe.Sizeof(shmi)
+	fmt.Println(shmilen)
+	sh, err := shm.GetSHMInfo(defaultKey, int(shmilen))
 	if nil != err {
 		return shmi, err
 	}
