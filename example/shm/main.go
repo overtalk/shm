@@ -12,7 +12,7 @@ type LogItem struct {
 	Fields       []string
 	Data         []interface{}
 }
-
+//go build -o readshm example/shm/main.go
 func testConstructor() interface{} {
 	return &LogItem{}
 }
