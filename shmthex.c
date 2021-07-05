@@ -306,7 +306,7 @@ typedef struct SHMInfo
     key_t key[200];
 } SHMI, *PSHMI;
 
-void *createSHMDefault(key_t key, int *id)
+void* createSHMDefault(key_t key, int *id)
 {
     int ret;
 
@@ -340,9 +340,23 @@ void *createSHMDefault(key_t key, int *id)
 
     return shmadd;
 }
-
+#define TEST_SHMI
 int main(/*int argc, char *argv[]*/)
 {
+#ifdef TEST_SHMI
+    int id = 0;
+   void* shmadd= createSHMDefault(999999,&id);
+    printf("shmid:%d\r\n",id);
+
+    SHMI shmi;
+    shmi.max_topic_len =64;
+    shmi.max_content_len=10240;
+    shmi.max_shm_size=1024000;
+    shmi.count=1;
+    shmi.key[0]=202107;
+    memcpy(shmadd,&shmi,sizeof(SHMI));
+    return 0;
+ #endif
 	printf("share memory\n");
 	for (int j = 0; j < MAX_THREAD_NUM; j++)
 	{
