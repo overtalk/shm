@@ -44,6 +44,9 @@ func GetShareMemoryInfo(defaultKey int) (SHMInfo, error) {
 	if nil != err {
 		return shmi, err
 	}
-	shmi = *(*SHMInfo)(unsafe.Pointer(&sh.Data))
+
+	x := (*[200]uintptr)(unsafe.Pointer(&sh.Data))
+	fmt.Println(x)
+	shmi = *(*SHMInfo )(unsafe.Pointer(&sh.Data))
 	return shmi, err
 }
