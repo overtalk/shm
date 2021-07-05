@@ -16,6 +16,10 @@
 
 #define MAX_THREAD_NUM 1
 
+//make
+//gcc -g shmthex.c -lpthread -o testshm
+
+
 pthread_t tidps[MAX_THREAD_NUM];
 unsigned long long writeOffSet = 0;
 
@@ -47,12 +51,12 @@ const unsigned int blockSize = blockDataSize + blockHeadSize;
 typedef struct Block
 {
     /* data */
-    char completed;
-    const unsigned int  blockCount;
-    const unsigned int  blockIndex;
-    const unsigned int  blockLen;//this is len of  data ,
+     unsigned int  completed;
+     unsigned int  blockCount;
+     unsigned int  blockIndex;
+     unsigned int  blockLen;//this is len of  data ,
     PTLV data;
-}TBlock,*PLBlock;
+}TBlock,*PBlock;
 
 typedef struct threadParam
 {
@@ -147,12 +151,16 @@ static void *createEx(void *arg)
 {
 	THParam *param = (THParam *)arg;
 
-    PBlock bl = (PLBlock)malloc(sizeof(TBlock));
+    PBlock bl = (PBlock)malloc(sizeof(TBlock));
     memset(bl, 0, sizeof(TBlock));
+
     PTLV td = (PTLV)malloc(sizeof(TLV));
     memset(td, 0, sizeof(TLV));
-	int lun = 0;
 
+    bl->data = (PTLV)malloc(sizeof(TLV));
+    memset(bl->data, 0, sizeof(TLV));
+
+	int lun = 0;
 	param->writeOffSet = sizeof(Head);
 	while (1)
 	{
@@ -179,11 +187,13 @@ static void *createEx(void *arg)
 			int len = param->jsonlen;
 			len += TOPIC_LEN;
 			len += sizeof(unsigned long long) * 2;
-
-			if (param->writeOffSet + len < MAX_SHARE_MEM_SIZE)
+			bl->blockLen=len;
+            memcpy(bl->data,td,len);
+            int bloblen = bl->blockLen+sizeof(unsigned int)*4;
+			if (param->writeOffSet + bloblen < MAX_SHARE_MEM_SIZE)
 			{
-				memcpy(param->shmadd + param->writeOffSet, td, len);
-				param->writeOffSet += len;
+				memcpy(param->shmadd + param->writeOffSet, bl, bloblen);
+				param->writeOffSet += bloblen;
 			}
 			else
 			{
@@ -191,8 +201,8 @@ static void *createEx(void *arg)
 				memset(param->shmadd + param->writeOffSet, 0x00, MAX_SHARE_MEM_SIZE - param->writeOffSet - 1);
 				param->writeOffSet = sizeof(Head);
 
-				memcpy(param->shmadd + param->writeOffSet, td, len);
-				param->writeOffSet += len;
+				memcpy(param->shmadd + param->writeOffSet, bl, bloblen);
+				param->writeOffSet += bloblen;
 			}
 			param->Tag++;
 		}
@@ -285,6 +295,52 @@ char *getJsonData(const char *jsonFile, int *jsonLen)
 	return json;
 }
 void NormalShareMemory();
+
+
+typedef struct SHMInfo
+{
+    unsigned long long max_topic_len;
+    unsigned long long max_content_len;
+    unsigned long long max_shm_size;
+    unsigned long long count;
+    key_t key[200];
+} SHMI, *PSHMI;
+
+void *createSHMDefault(key_t key, int *id)
+{
+    int ret;
+
+    char *shmadd;
+
+    /*创建共享内存*/
+    int size = sizeof(SHMI);
+    int shmid = shmget(key, size, IPC_CREAT | 666);
+    if (shmid < 0)
+    {
+        perror("shmget");
+        exit(-1);
+    }
+
+    struct shmid_ds shmds;
+    ret = shmctl(shmid, IPC_STAT, &shmds);
+    if (ret == 0)
+    {
+        printf("Size of memory segment is %d bytes.\n", (int)shmds.shm_segsz);
+        printf("Number of attach %d\n", (int)shmds.shm_nattch);
+    }
+    else
+    {
+        printf("shmctl() call failed.\n");
+        return NULL;
+    }
+    *id = shmid;
+    /*映射*/
+    shmadd = shmat(shmid, NULL, 0);
+    bzero(shmadd, size);
+
+    return shmadd;
+}
+
 int main(/*int argc, char *argv[]*/)
 {
 	printf("share memory\n");
@@ -308,7 +364,7 @@ int main(/*int argc, char *argv[]*/)
 		pthread_t tidp;
 		int error;
 		void *tret;
-		error = pthread_create(&tidps[j], NULL, create, (void *)tp);
+		error = pthread_create(&tidps[j], NULL, createEx, (void *)tp);
 	}
 
 	for (int k = 0; k < MAX_THREAD_NUM; k++)
@@ -321,6 +377,7 @@ int main(/*int argc, char *argv[]*/)
 
 	while (1)
 	{
+	    printf("running ....\n");
 	}
 	return 1;
 }

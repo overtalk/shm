@@ -18,7 +18,7 @@ var (
 )
 
 type block struct {
-	completed  bool
+	completed  uint16
 	blockCount uint16
 	blockIndex uint16
 	blockLen   uint16
@@ -37,7 +37,7 @@ func newBlock(blockCount, blockIndex uint16, data []byte) (*block, error) {
 	}
 
 	b := &block{
-		completed:  false,
+		completed:  0,
 		blockCount: blockCount,
 		blockIndex: blockIndex,
 		blockLen:   dataSize,
@@ -53,7 +53,7 @@ func newBlockFromBytes(bytes []byte) (*block, error) {
 	}
 
 	return &block{
-		completed:  bytes[0] != 0,
+		completed:  uint16(bytes[0]),
 		blockCount: binary.BigEndian.Uint16(bytes[1:3]),
 		blockIndex: binary.BigEndian.Uint16(bytes[3:5]),
 		blockLen:   binary.BigEndian.Uint16(bytes[5:7]),
@@ -62,16 +62,20 @@ func newBlockFromBytes(bytes []byte) (*block, error) {
 }
 
 func (block *block) isCompleted(expectedBlockIndex uint16) bool {
+	var finish bool = false
+	if block.completed > 0 {
+		finish = true
+	}
 	return expectedBlockIndex == block.blockIndex &&
 		block.blockCount <= maxBlockCount &&
 		block.blockIndex < block.blockCount &&
 		block.blockLen <= blockDataSize &&
-		block.completed
+		finish
 }
 
 func (block *block) serialize() []byte {
 	ret := make([]byte, int(blockDataSize+blockHeadSize))
-	if block.completed {
+	if block.completed > 0 {
 		ret[0] = 1
 	} else {
 		ret[0] = 0
