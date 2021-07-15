@@ -29,24 +29,30 @@ type SHMInfo struct {
 var MTL uint = 64
 var MCL uint = 102400
 
-type tagTLV struct {
+type TagTLV struct {
 	Tag      uint32
 	Len      uint32
-	TopicLen []byte
-	Value    []byte
+	TopicLen string
+	Value    string
 }
 
+
+//todo  run it use root
 func GetShareMemoryInfo(defaultKey int) (SHMInfo, error) {
 	var shmi SHMInfo
 	shmilen := unsafe.Sizeof(shmi)
-	fmt.Println(shmilen)
+	fmt.Printf("sizeof:shmi=%d\r\n",shmilen)
 	sh, err := shm.GetSHMInfo(defaultKey, int(shmilen))
+
 	if nil != err {
 		return shmi, err
 	}
 
 	x := (*[200]uintptr)(unsafe.Pointer(&sh.Data))
-	fmt.Println(x)
+	fmt.Printf("data:%#v\n",x)
+	fmt.Printf("data:%#v\n",sh)
 	shmi = *(*SHMInfo )(unsafe.Pointer(&sh.Data))
+	fmt.Printf("shmi:%#v",shmi)
 	return shmi, err
 }
+
