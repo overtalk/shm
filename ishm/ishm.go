@@ -32,6 +32,9 @@ type Segment struct {
 func Create(size int64) (*Segment, error) {
 	return OpenSegment(size, (IpcCreate | IpcExclusive), 0600)
 }
+func CreateWithKey(key  ,size int64) (*Segment, error) {
+	return OpenSegmentWithKey(key,size, (IpcCreate | IpcExclusive), 0600)
+}
 
 // Open an existing shared memory segment located at the given ID.  This ID is returned in the
 // struct that is populated by Create(), or by the shmget() system call.
@@ -64,7 +67,7 @@ func OpenSegment(size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segme
 	}
 	return nil, err
 }
-func OpenSegmentWithKey(key int ,size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segment, error) {
+func OpenSegmentWithKey(key ,size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segment, error) {
 	var err error
 	if shmid, err := C.sysv_shm_open_with_key(C.int(key),C.int(size), C.int(flags), C.int(perms)); err == nil {
 		actualSize, err := C.sysv_shm_get_size(shmid)
