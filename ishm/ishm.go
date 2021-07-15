@@ -64,6 +64,20 @@ func OpenSegment(size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segme
 	}
 	return nil, err
 }
+func OpenSegmentWithKey(key int ,size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segment, error) {
+	var err error
+	if shmid, err := C.sysv_shm_open_with_key(C.int(key),C.int(size), C.int(flags), C.int(perms)); err == nil {
+		actualSize, err := C.sysv_shm_get_size(shmid)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to retrieve SHM size: %v", err)
+		}
+		return &Segment{
+			Id:   int64(shmid),
+			Size: int64(actualSize),
+		}, nil
+	}
+	return nil, err
+}
 
 // DestroySegment destroy a shared memory segment by its ID
 //
