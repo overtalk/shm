@@ -26,7 +26,7 @@ int sysv_shm_open_with_key(int key,int size, int flags, int perm) {
         }
 
 
-         return shmget(key, size, flags|perm);
+         return shmget((key_t)key, size, flags|perm);
     } else {
 
          return shmget(key, size, 0);

@@ -9,7 +9,7 @@
 #define IPC_KEY_PROJID 0x42
 
 int sysv_shm_open(int size, int flags, int perm);
-int sysv_shm_open_with_key(int size, int flags, int perm);
+int sysv_shm_open_with_key(int key ,int size, int flags, int perm);
 void *sysv_shm_attach(int shm_id);
 int sysv_shm_detach(void *addr);
 int sysv_shm_write(int shm_id, void* input, int len, int offset);
