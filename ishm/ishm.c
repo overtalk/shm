@@ -10,8 +10,26 @@ int sysv_shm_open(int size, int flags, int perm) {
         }
 
         return shmget(IPC_PRIVATE, size, flags|perm);
+
     } else {
-        return shmget(IPC_PRIVATE, size, 0);
+       return shmget(IPC_PRIVATE, size, 0);
+
+    }
+}
+int sysv_shm_open_with_key(int key,int size, int flags, int perm) {
+    int shm_id;
+
+    if(size) {
+        // unless otherwise specified, segment is owner-read/write (no exec)
+        if(!perm){
+            perm = 0600;
+        }
+
+
+         return shmget(key, size, flags|perm);
+    } else {
+
+         return shmget(key, size, 0);
     }
 }
 
