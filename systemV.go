@@ -41,7 +41,7 @@ func GetSHMInfo(key, size int) (*reflect.SliceHeader, error) {
 		return nil, model.ErrOutOfCapacity
 	}
 
-	shmID, _, errCode := syscall.Syscall(syscall.SYS_SHMGET, uintptr(key), uintptr(size), ipcCreate)
+	shmID, _, errCode := syscall.Syscall(syscall.SYS_SHMGET, uintptr(key), uintptr(size), ipcCreate|0600)
 	if errCode != 0 {
 		return nil, fmt.Errorf("syscall error, err: %d\n", errCode)
 	}
@@ -50,6 +50,7 @@ func GetSHMInfo(key, size int) (*reflect.SliceHeader, error) {
 	if errCode != 0 {
 		return nil, fmt.Errorf("syscall error, err: %d\n", errCode)
 	}
+
 
 	var data []byte
 	sh := (*reflect.SliceHeader)(unsafe.Pointer(&data))
