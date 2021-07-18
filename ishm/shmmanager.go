@@ -35,6 +35,16 @@ func (sm *ShmManager) Init() (err error) {
 	sm.segment, err = Create(sm.memSize)
 	return err
 }
+func (sm *ShmManager) InitWithKey(key,usedBlockSize int64) (err error) {
+	sm.usedSize = 0
+	sm.freeSize = sm.memSize
+	sm.usedBlocks = make(map[string]*MemBlock, usedBlockSize)
+	sm.memChain = NewMemChain()
+	sm.memChain.Insert(NewBlock(0, sm.memSize))
+	sm.mu = sync.RWMutex{}
+	sm.segment, err = CreateWithKey(key,sm.memSize*usedBlockSize)
+	return err
+}
 
 // WriteBlock ...
 func (sm *ShmManager) WriteBlock(blockName string, data []byte) (int, error) {
