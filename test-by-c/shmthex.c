@@ -291,6 +291,7 @@ char *getJsonData(const char *jsonFile, int *jsonLen)
 		*jsonLen = len;
 		fclose(f);
 		printf("%s\n", json);
+		sleep(2);
 	}
 	return json;
 }
@@ -366,7 +367,7 @@ int main(/*int argc, char *argv[]*/)
         shmi.key[j]=202107+j;
 #endif//
 		sprintf(tp->topic, "kill_kafa_%d", j + 1);
-		sprintf(tp->jsonPath, "example%d.json", j + 1);
+		sprintf(tp->jsonPath, "./example%d.json", j + 1);
 		tp->writeOffSet = sizeof(Head);
 
 		int len = 0;
