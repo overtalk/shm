@@ -8,6 +8,7 @@ import (
 	"github.com/kevinu2/shm/shmdata"
 	"log"
 	"math/rand"
+	"time"
 	"unsafe"
 )
 
@@ -59,43 +60,78 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//	log.Print(shmi)
-
 	for i, k := range shmi.Key {
 		if i == int(shmi.Count) {
 			break
 		}
+
 		fmt.Printf("key:%v\r\n", k)
+		if uint64(i) < shmi.Count-1 {
+			go func() {
+				sm, err := ishm.CreateWithKey(int64(k), 0)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Print(sm)
+				var offset int64 = 16
+				//	for {
+				hd, err := shmdata.GetHeadData(sm)
+				if err == nil {
+					fmt.Println(hd)
+				}
+				tlv, retoffset, err := shmdata.ReadTLVData(sm, offset)
+				fmt.Printf("tlv:Tag %v,Len %v\r\n", tlv.Tag, tlv.Len)
+				fmt.Printf("offset:%v\r\n", retoffset)
+				T1 := time.Now()
+				for {
 
-		sm, err := ishm.CreateWithKey(int64(k), 0)
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
-		log.Print(sm)
+					tlv, retoffset, err = shmdata.ReadTLVData(sm, retoffset)
+					fmt.Printf("offset:%v\r\n", retoffset)
+					if err != nil {
+						retoffset = 16
+						T2 := time.Now()
+						log.Printf("key = %v use time %v \r\n", k, T2.Sub(T1).Seconds())
+						time.Sleep(time.Second * 2)
+						T1 = time.Now()
 
-		var offset int64 = 16
-		//	for {
-		hd, err := shmdata.GetHeadData(sm)
-		if err == nil {
-			fmt.Println(hd)
-		}
-		tlv,retoffset,err:=shmdata.ReadTLVData(sm,offset)
-		fmt.Printf("offset:%v\r\n",retoffset)
-		for  {
+					}
+				}
 
-			tlv,retoffset,err=shmdata.ReadTLVData(sm,retoffset)
-			fmt.Printf("offset:%v\r\n",retoffset)
+			}()
+		} else {
+
+			sm, err := ishm.CreateWithKey(int64(k), 0)
 			if err != nil {
-				retoffset=16
+				log.Fatal(err)
 			}
-		}
+			log.Print(sm)
+			var offset int64 = 16
+			//	for {
+			hd, err := shmdata.GetHeadData(sm)
+			if err == nil {
+				fmt.Println(hd)
+			}
+			tlv, retoffset, err := shmdata.ReadTLVData(sm, offset)
+			fmt.Printf("tlv:Tag %v,Len %v\r\n", tlv.Tag, tlv.Len)
+			fmt.Printf("offset:%v\r\n", retoffset)
+			T1 := time.Now()
+			for {
 
-		if err != nil {
-			log.Fatal(err)
+				tlv, retoffset, err = shmdata.ReadTLVData(sm, retoffset)
+				fmt.Printf("offset:%v\r\n", retoffset)
+				if err != nil {
+					retoffset = 16
+					T2 := time.Now()
+					log.Printf("key = %v use time %v \r\n", k, T2.Sub(T1).Seconds())
+					time.Sleep(time.Second * 2)
+					T1 = time.Now()
+
+				}
+			}
+
 		}
-		log.Println(tlv.Tag)
 
 		i++
 	}
+
 }
