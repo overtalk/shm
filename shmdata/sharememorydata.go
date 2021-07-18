@@ -1,6 +1,7 @@
 package shmdata
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kevinu2/shm/ishm"
 	"log"
@@ -75,7 +76,7 @@ func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
 	var tll *TagTL = *(**TagTL)(unsafe.Pointer(&data))
 	fmt.Printf("tll:%#v\r\n", tll)
 	if tll.Len==0 {
-		return nil,16,nil
+		return nil,16,errors.New("data is end")
 	}
 	tlv := TagTLV{}
 	tlv.Topic = make([]byte, 64)
