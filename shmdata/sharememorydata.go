@@ -6,6 +6,7 @@ import (
 	"github.com/kevinu2/shm/ishm"
 	"log"
 	"reflect"
+	"time"
 	"unsafe"
 )
 
@@ -91,6 +92,36 @@ func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
 	retOffset+=int64(datalen)
 	fmt.Printf("tlv:T %v Len :%v\r\n",readtlv.Tag,readtlv.Len)
 	return readtlv, retOffset,err
+}
+func Readtlv(k int64)  {
+	sm, err := ishm.CreateWithKey(int64(k), 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print(sm)
+	var offset int64 = 16
+	//	for {
+	hd, err := GetHeadData(sm)
+	if err == nil {
+		fmt.Println(hd)
+	}
+	tlv, retoffset, err := ReadTLVData(sm, offset)
+	fmt.Printf("tlv:Tag %v,Len %v\r\n", tlv.Tag, tlv.Len)
+	fmt.Printf("offset:%v\r\n", retoffset)
+	T1 := time.Now()
+	for {
+
+		tlv, retoffset, err = ReadTLVData(sm, retoffset)
+		fmt.Printf("offset:%v\r\n", retoffset)
+		if err != nil {
+			retoffset = 16
+			T2 := time.Now()
+			log.Printf("key = %v use time %v \r\n", k, T2.Sub(T1).Seconds())
+			time.Sleep(time.Second * 2)
+			T1 = time.Now()
+
+		}
+	}
 }
 
 //todo  run it use root
