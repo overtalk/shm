@@ -74,19 +74,27 @@ func main() {
 		}
 		log.Print(sm)
 
-		for {
-			tlv := shmdata.TagTLV{}
-			tlv.Topic = make([]byte, shmi.MaxTopicLen)
-			tlv.Value = make([]byte, shmi.MaxContentLen)
-			datalen := shmdata.SizeStruct(tlv)
-			od, err := sm.ReadChunk(int64(datalen), int64(sm.Position()+16))
-
-			if err != nil {
-
-			}
-
-			fmt.Printf("tlvdata:%#v", od)
+		var offset int64 = 16
+		//	for {
+		hd, err := shmdata.GetHeadData(sm)
+		if err == nil {
+			fmt.Println(hd)
 		}
+		tlv,retoffset,err:=shmdata.ReadTLVData(sm,offset)
+		fmt.Printf("offset:%v\r\n",retoffset)
+		for  {
+
+			tlv,retoffset,err=shmdata.ReadTLVData(sm,retoffset)
+			fmt.Printf("offset:%v\r\n",retoffset)
+			if err != nil {
+				retoffset=16
+			}
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(tlv.Tag)
 
 		i++
 	}
