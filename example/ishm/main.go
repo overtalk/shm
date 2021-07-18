@@ -7,6 +7,8 @@ import (
 	"github.com/kevinu2/shm/ishm"
 	"github.com/kevinu2/shm/shmdata"
 	"log"
+	"math/rand"
+	"unsafe"
 )
 
 const MAX_SIZE= 1 << 30
@@ -21,19 +23,21 @@ func ReadSHMI()  {
 	encoder := gob.NewEncoder(&buf) // will write to buf
 
 	shmi:=shmdata.SHMInfo{}
+	lll:=shmdata.SizeStruct(shmi)
+	fmt.Printf("shmisize:%v ,,,sizof:%v\n",lll,unsafe.Sizeof(shmi))
 	shmi.MaxSHMSize=100
 	shmi.MaxContentLen=64
 	shmi.MaxTopicLen=128
 	shmi.Count=4
-	shmi.Key[0]=1000
-	shmi.Key[1]=20000
-	shmi.Key[2]=30000
+	for i,_:=range shmi.Key{
+		shmi.Key[i]=rand.Int31()
+	}
 	fmt.Printf("shm org:%#v\n",shmi)
 	encoder.Encode(shmi)
-
 	sm.Write(buf.Bytes())
 	shmilen:=buf.Len()//unsafe.Sizeof(shmi)
-	fmt.Printf("sizeof:%v\n",shmilen)
+
+	fmt.Printf("buferlen:%v\n",shmilen)
 	od,err:=sm.ReadChunk(int64(shmilen),0 )
 	if err != nil {
 		log.Fatal(err)
@@ -51,5 +55,6 @@ func ReadSHMI()  {
 	sm.Destroy()
 }
 func main() {
+
 	ReadSHMI()
 }
