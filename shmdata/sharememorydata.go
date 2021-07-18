@@ -42,7 +42,7 @@ var MCL uint = 102400
 type TagTLV struct {
 	Tag   uint64
 	Len   uint64
-	Topic []byte
+	Topic [64]byte
 	Value []byte
 }
 type TagTL struct {
@@ -80,7 +80,7 @@ func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
 		return nil,16,errors.New("data is end")
 	}
 	tlv := TagTLV{}
-	tlv.Topic = make([]byte, 64)
+	//tlv.Topic = make([]byte, 64)
 	tlv.Value = make([]byte, tll.Len)
 	datalen := SizeStruct(tlv)
 	od, err = segment.ReadChunk(int64(datalen), offset)
@@ -88,10 +88,17 @@ func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
 		log.Fatal(err)
 	}
 	data = *(*[]byte)(unsafe.Pointer(&od))
-	var readtlv *TagTLV = *(**TagTLV)(unsafe.Pointer(&data))
+	var readtlv *TagTLV = &tlv
+
+	readtlv= *(**TagTLV)(unsafe.Pointer(&data))
 	retOffset+=int64(datalen)
 	fmt.Printf("tlv:T %v Len :%v\r\n",readtlv.Tag,readtlv.Len)
+    topic:=string(readtlv.Topic[:])
+    fmt.Printf("topic:%s\n",topic)
 	return readtlv, retOffset,err
+}
+func Bytes2String(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
 func Readtlv(k int64)  {
 	sm, err := ishm.CreateWithKey(int64(k), 0)
