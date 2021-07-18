@@ -21,6 +21,7 @@ const (
 
 // Segment is a native representation of a SysV shared memory segment
 type Segment struct {
+	Key	   int64
 	Id     int64
 	Size   int64
 	offset int64
@@ -75,6 +76,7 @@ func OpenSegmentWithKey(key ,size int64, flags SharedMemoryFlags, perms os.FileM
 			return nil, fmt.Errorf("Failed to retrieve SHM size: %v", err)
 		}
 		return &Segment{
+			Key: key,
 			Id:   int64(shmid),
 			Size: int64(actualSize),
 		}, nil
