@@ -2,7 +2,8 @@ package shmdata
 
 import (
 	"fmt"
-	"github.com/kevinu2/shm"
+	"github.com/kevinu2/shm/ishm"
+	"log"
 	"reflect"
 	"unsafe"
 )
@@ -37,30 +38,30 @@ var MTL uint = 64
 var MCL uint = 102400
 
 type TagTLV struct {
-	Tag      uint32
-	Len      uint32
-	TopicLen string
-	Value    string
+	Tag      uint64
+	Len      uint64
+	Topic    []byte
+	Value    []byte
 }
 
 
 //todo  run it use root
-func GetShareMemoryInfo(defaultKey int) (SHMInfo, error) {
-	var shmi SHMInfo
-	shmilen := unsafe.Sizeof(shmi)
-	fmt.Printf("sizeof:shmi=%d\r\n",shmilen)
-	sh, err := shm.GetSHMInfo(defaultKey, int(shmilen))
-
-	if nil != err {
-		return shmi, err
+func GetShareMemoryInfo(defaultKey int64) (*SHMInfo, error) {
+	shmi:=SHMInfo{}
+	sm,err:=ishm.CreateWithKey(defaultKey,0)
+	if err != nil {
+		log.Fatal(err)
+		sm.Destroy()
 	}
-
-	x := (*[200]uintptr)(unsafe.Pointer(&sh.Data))
-	fmt.Printf("data:%#v\n",x)
-	fmt.Printf("data:%#v\n",sh)
-	shmi = *(*SHMInfo )(unsafe.Pointer(&sh.Data))
-	fmt.Printf("shmi:%#v",shmi)
-	return shmi, err
+	od,err:=sm.ReadChunk(int64(unsafe.Sizeof(shmi)),0 )
+	if err != nil {
+		log.Fatal(err)
+	}
+	data :=  *(*[]byte)(unsafe.Pointer(&od))
+	var  readshmi *SHMInfo= *(**SHMInfo)(unsafe.Pointer(&data))
+	fmt.Printf("shmiii:%#v\r\n",readshmi)
+	fmt.Printf("sm:%#v\n",sm)
+	return readshmi,err
 }
 
 func SizeStruct(data interface{}) int {
