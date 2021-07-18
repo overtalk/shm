@@ -1,7 +1,7 @@
 package shm
 
 import (
-	"github.com/overtalk/shm/model"
+	"github.com/kevinu2/shm/model"
 	"os"
 	"syscall"
 	"unsafe"

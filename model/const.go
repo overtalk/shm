@@ -2,7 +2,7 @@ package model
 
 import "errors"
 
-const MaxCapacity = 1 << 30 // 1G
+const MaxCapacity = 8 << 30 // 8G
 
 var ErrOutOfCapacity = errors.New("out of capacity")
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/overtalk/shm"
+	"github.com/kevinu2/shm"
 )
 
 type LogItem struct {

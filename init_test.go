@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/overtalk/shm"
+	"github.com/kevinu2/shm"
 )
 
 // LogItem defines one log record
