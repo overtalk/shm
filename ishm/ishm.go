@@ -3,6 +3,8 @@ package ishm
 // #include "ishm.h"
 import "C"
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
@@ -34,7 +36,7 @@ func Create(size int64) (*Segment, error) {
 	return OpenSegment(size, (IpcCreate | IpcExclusive), 0600)
 }
 func CreateWithKey(key  ,size int64) (*Segment, error) {
-	return OpenSegmentWithKey(key,size, (IpcCreate | IpcExclusive), 0600)
+	return OpenSegmentWithKey(key,size, (IpcCreate | IpcExclusive ), 0600)
 }
 
 // Open an existing shared memory segment located at the given ID.  This ID is returned in the
@@ -168,6 +170,23 @@ func (s *Segment) Write(p []byte) (n int, err error) {
 		s.offset += length
 		return int(length), nil
 	}
+}
+func(s *Segment)  GetBytes(key interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+func (s *Segment) WriteObj(key interface{}) (n int, err error) {
+	// if the offset runs past the segment size, we've reached the end
+	data,err:=s.GetBytes(key)
+	if err != nil {
+		return 0,err
+	}
+	return s.Write(data)
 }
 
 // Resets the internal offset counter for this segment, allowing subsequent calls
