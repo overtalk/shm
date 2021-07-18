@@ -11,10 +11,10 @@
 #include <pthread.h>
 
 #define MAX_CONTENT_LEN 10240
-#define MAX_SHARE_MEM_SIZE 429496729
+#define MAX_SHARE_MEM_SIZE 1024*1024*50
 #define TOPIC_LEN 64
 
-#define MAX_THREAD_NUM 1
+#define MAX_THREAD_NUM 2
 
 //make
 //gcc -g shmthex.c -lpthread -o testshm
@@ -348,20 +348,23 @@ int main(/*int argc, char *argv[]*/)
    void* shmadd= createSHMDefault(999999,&id);
     printf("shmid:%d\r\n",id);
 
+    printf("sizeof:shmi:%d\n",sizeof(SHMI));
     SHMI shmi;
     shmi.max_topic_len =64;
     shmi.max_content_len=10240;
     shmi.max_shm_size=1024000;
-    shmi.count=1;
-    shmi.key[0]=202107;
-    memcpy(shmadd,&shmi,sizeof(SHMI));
-    return 0;
- #endif
+    shmi.count=MAX_THREAD_NUM;
+#endif//
+
+
 	printf("share memory\n");
 	for (int j = 0; j < MAX_THREAD_NUM; j++)
 	{
 		THParam *tp = (THParam *)malloc(sizeof(THParam));
 		tp->key = 202107 + j;
+#ifdef TEST_SHMI
+        shmi.key[j]=202107+j;
+#endif//
 		sprintf(tp->topic, "kill_kafa_%d", j + 1);
 		sprintf(tp->jsonPath, "example%d.json", j + 1);
 		tp->writeOffSet = sizeof(Head);
@@ -378,13 +381,14 @@ int main(/*int argc, char *argv[]*/)
 		pthread_t tidp;
 		int error;
 		void *tret;
-		error = pthread_create(&tidps[j], NULL, createEx, (void *)tp);
+		error = pthread_create(&tidps[j], NULL, create, (void *)tp);
 	}
-
+#ifdef TEST_SHMI
+    memcpy(shmadd,&shmi,sizeof(SHMI));
+#endif//
 	for (int k = 0; k < MAX_THREAD_NUM; k++)
 	{
 		void *tret;
-
 		pthread_join(tidps[k], &tret);
 		printf("pid:%ld\n", tidps[k]);
 	}
