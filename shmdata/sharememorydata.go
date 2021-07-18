@@ -95,6 +95,14 @@ func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
 	fmt.Printf("tlv:T %v Len :%v\r\n",readtlv.Tag,readtlv.Len)
     topic:=string(readtlv.Topic[:])
     fmt.Printf("topic:%s\n",topic)
+
+    //read content
+
+    conentOffset:= offset+int64(unsafe.Sizeof(tl))+64
+	od, err = segment.ReadChunk(int64(tl.Len), conentOffset)
+	content:=string(od)
+	fmt.Printf("content:%s\n",content)
+	readtlv.Value=od
 	return readtlv, retOffset,err
 }
 func Bytes2String(b []byte) string {
