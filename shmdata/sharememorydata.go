@@ -38,30 +38,77 @@ var MTL uint = 64
 var MCL uint = 102400
 
 type TagTLV struct {
-	Tag      uint64
-	Len      uint64
-	Topic    []byte
-	Value    []byte
+	Tag   uint64
+	Len   uint64
+	Topic []byte
+	Value []byte
+}
+type TagTL struct {
+	Tag   uint64
+	Len   uint64
+}
+type HeadData struct {
+	ReadOffSet  uint64
+	WriteOffSet uint64
 }
 
+func GetHeadData(segment *ishm.Segment) (*HeadData, error) {
+	h := HeadData{}
+	od, err := segment.ReadChunk(int64(unsafe.Sizeof(h)), 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := *(*[]byte)(unsafe.Pointer(&od))
+	var hd *HeadData = *(**HeadData)(unsafe.Pointer(&data))
+	fmt.Printf("hd:%#v\r\n", hd)
+	fmt.Printf("sm:%#v\n", segment)
+	return hd, err
+}
+func ReadTLVData(segment *ishm.Segment,offset int64) (*TagTLV, int64,error) {
+	tl := TagTL{}
+	var retOffset int64=offset
+	od, err := segment.ReadChunk(int64(unsafe.Sizeof(tl)), offset)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := *(*[]byte)(unsafe.Pointer(&od))
+	var tll *TagTL = *(**TagTL)(unsafe.Pointer(&data))
+	fmt.Printf("tll:%#v\r\n", tll)
+	if tll.Len==0 {
+		return nil,16,nil
+	}
+	tlv := TagTLV{}
+	tlv.Topic = make([]byte, 64)
+	tlv.Value = make([]byte, tll.Len)
+	datalen := SizeStruct(tlv)
+	od, err = segment.ReadChunk(int64(datalen), offset)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data = *(*[]byte)(unsafe.Pointer(&od))
+	var readtlv *TagTLV = *(**TagTLV)(unsafe.Pointer(&data))
+	retOffset+=int64(datalen)
+	fmt.Printf("tlv:T %v Len :%v\r\n",readtlv.Tag,readtlv.Len)
+	return readtlv, retOffset,err
+}
 
 //todo  run it use root
 func GetShareMemoryInfo(defaultKey int64) (*SHMInfo, error) {
-	shmi:=SHMInfo{}
-	sm,err:=ishm.CreateWithKey(defaultKey,0)
+	shmi := SHMInfo{}
+	sm, err := ishm.CreateWithKey(defaultKey, 0)
 	if err != nil {
 		log.Fatal(err)
 		sm.Destroy()
 	}
-	od,err:=sm.ReadChunk(int64(unsafe.Sizeof(shmi)),0 )
+	od, err := sm.ReadChunk(int64(unsafe.Sizeof(shmi)), 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	data :=  *(*[]byte)(unsafe.Pointer(&od))
-	var  readshmi *SHMInfo= *(**SHMInfo)(unsafe.Pointer(&data))
-	fmt.Printf("shmiii:%#v\r\n",readshmi)
-	fmt.Printf("sm:%#v\n",sm)
-	return readshmi,err
+	data := *(*[]byte)(unsafe.Pointer(&od))
+	var readshmi *SHMInfo = *(**SHMInfo)(unsafe.Pointer(&data))
+	fmt.Printf("shmiii:%#v\r\n", readshmi)
+	fmt.Printf("sm:%#v\n", sm)
+	return readshmi, err
 }
 
 func SizeStruct(data interface{}) int {
