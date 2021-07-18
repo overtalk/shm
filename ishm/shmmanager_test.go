@@ -34,6 +34,12 @@ type Book struct {
 	Desc string `json:"desc"`
 }
 
+type  NDRTopic struct {
+	Tag int64 `json:"tag"`
+	TopicType int `json:"topicType"`
+	Topic string `json:"topic"`
+}
+
 func TestReadWriteBlock(t *testing.T) {
 	sm := NewShmManager(1024)
 	err := sm.Init()
