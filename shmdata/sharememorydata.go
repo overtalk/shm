@@ -38,12 +38,19 @@ type SHMInfo struct {
 
 var MTL uint = 64
 var MCL uint = 102400
+var Counter int64 = 0
 
 type TagTLV struct {
-	Tag   uint64
+	Tag   int64
 	Len   uint64
 	Topic [64]byte
-	Value [10240]byte
+	Value [40960]byte
+}
+
+type ContentData struct {
+	Tag   int64
+	Topic  string
+	Value string
 }
 type TagTL struct {
 	Tag uint64
@@ -53,7 +60,8 @@ type HeadData struct {
 	ReadOffSet  uint64
 	WriteOffSet uint64
 }
-
+var ST1 time.Time
+var ST2 time.Time
 func GetHeadData(segment *ishm.Segment) (*HeadData, error) {
 	h := HeadData{}
 	od, err := segment.ReadChunk(int64(unsafe.Sizeof(h)), 0)
@@ -66,6 +74,7 @@ func GetHeadData(segment *ishm.Segment) (*HeadData, error) {
 	fmt.Printf("sm:%#v\n", segment)
 	return hd, err
 }
+
 func ReadTLVData(segment *ishm.Segment, offset int64) (*TagTLV, int64, error) {
 	tl := TagTL{}
 	var retOffset int64 = offset
@@ -75,13 +84,19 @@ func ReadTLVData(segment *ishm.Segment, offset int64) (*TagTLV, int64, error) {
 	}
 	data := *(*[]byte)(unsafe.Pointer(&od))
 	var tll *TagTL = *(**TagTL)(unsafe.Pointer(&data))
-	fmt.Printf("tll:%#v\r\n", tll)
+	now := time.Now().Unix()
+	last := time.Unix(int64(tll.Tag), 0)
+
+	if now > last.Unix() {
+		log.Println("will be wait ,now: %d,last:%d\n", now, last.Unix())
+		//time.Sleep(time.Second)
+		//return nil,retOffset,nil
+	}
+
 	if tll.Len == 0 {
 		return nil, 16, errors.New("data is end")
 	}
 	tlv := TagTLV{}
-	//tlv.Topic = make([]byte, 64)
-	//tlv.Value = make([]byte, tll.Len)
 	datalen := int64(unsafe.Sizeof(tl)) + int64(64) + int64(tll.Len) // SizeStruct(tlv)
 	od, err = segment.ReadChunk(datalen, offset)
 	if err != nil {
@@ -89,15 +104,24 @@ func ReadTLVData(segment *ishm.Segment, offset int64) (*TagTLV, int64, error) {
 	}
 	data = *(*[]byte)(unsafe.Pointer(&od))
 	var readtlv *TagTLV = &tlv
-
 	readtlv = *(**TagTLV)(unsafe.Pointer(&data))
 	retOffset += int64(datalen)
-	fmt.Printf("tlv:T %v Len :%v\r\n", readtlv.Tag, readtlv.Len)
+
 	topic := string(readtlv.Topic[:])
 	fmt.Printf("topic:%s\n", topic)
 	content := string(readtlv.Value[:])
-
-	fmt.Printf("content:%s\n", content)
+	//fmt.Printf("content:%s\n", content)
+	Counter++
+	ST2=time.Now()
+	if ST2.Sub(ST1).Seconds() >10.000 {
+		log.Printf("data %v per sec\r\n",float64(Counter)/ST2.Sub(ST1).Seconds())
+		Counter = 0
+		ST1=time.Now()
+	}
+	contentData:=ContentData{}
+	contentData.Tag=readtlv.Tag
+	contentData.Topic=topic
+	contentData.Value=content
 
 	return readtlv, retOffset, err
 }
@@ -111,13 +135,14 @@ func Readtlv(k int64) {
 	}
 	log.Print(sm)
 	var offset int64 = 16
-	//	for {
 	hd, err := GetHeadData(sm)
 	if err == nil {
 		fmt.Println(hd)
 	}
 	tlv, retoffset, err := ReadTLVData(sm, offset)
-	fmt.Printf("tlv:Tag %v,Len %v\r\n", tlv.Tag, tlv.Len)
+	if tlv != nil {
+		fmt.Printf("tlv:Tag %v,Len %v\r\n", tlv.Tag, tlv.Len)
+	}
 	fmt.Printf("offset:%v\r\n", retoffset)
 	T1 := time.Now()
 	for {
@@ -137,6 +162,8 @@ func Readtlv(k int64) {
 
 //todo  run it use root
 func GetShareMemoryInfo(defaultKey int64) (*SHMInfo, error) {
+
+	ST1 = time.Now()
 	shmi := SHMInfo{}
 	sm, err := ishm.CreateWithKey(defaultKey, 0)
 	if err != nil {
