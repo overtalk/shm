@@ -10,12 +10,11 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define MAX_CONTENT_LEN 40960
+#define MAX_CONTENT_LEN 10240
 #define MAX_SHARE_MEM_SIZE 1024*1024*50
 #define TOPIC_LEN 64
 
 #define MAX_THREAD_NUM 2
-#define USE_TIMESTAMP_AS_TAG 1
 
 //make
 //gcc -g shmthex.c -lpthread -o testshm
@@ -36,7 +35,7 @@ typedef struct tagHead
 Head h;
 typedef struct tagTLV
 {
-	long long Tag;
+	unsigned long long Tag;
 	unsigned long long len;
 	char Topic[TOPIC_LEN];
 	char Value[MAX_CONTENT_LEN];
@@ -98,7 +97,6 @@ static void *create(void *arg)
 
 			// sprintf(temp,"topic %lld ",Tag);
 			int topiclen = strlen(param->topic);
-			
 			td->Tag = param->Tag;
 			td->len = param->jsonlen;
 			memcpy(td->Value, param->json, param->jsonlen);
@@ -111,7 +109,10 @@ static void *create(void *arg)
 			if (param->writeOffSet + len < MAX_SHARE_MEM_SIZE)
 			{
 				memcpy(param->shmadd + param->writeOffSet, td, len);
-				param->writeOffSet += len;
+				param->writeOffSet += (MAX_CONTENT_LEN + TOPIC_LEN + sizeof(unsigned long long) * 2);
+				if(param->writeOffSet >= MAX_SHARE_MEM_SIZE){
+				    param->writeOffSet = 16;
+				}
 			}
 			else
 			{
@@ -120,7 +121,7 @@ static void *create(void *arg)
 				param->writeOffSet = sizeof(Head);
 
 				memcpy(param->shmadd + param->writeOffSet, td, len);
-				param->writeOffSet += len;
+				param->writeOffSet += (MAX_CONTENT_LEN + TOPIC_LEN + sizeof(unsigned long long) * 2);
 			}
 			param->Tag++;
 		}
@@ -149,7 +150,6 @@ static void *create(void *arg)
 
 	return 0;
 }
-#include <time.h>
 static void *createEx(void *arg)
 {
 	THParam *param = (THParam *)arg;
@@ -168,7 +168,7 @@ static void *createEx(void *arg)
 	while (1)
 	{
 		lun++;
-		clock_t t1 = clock();
+		clock_t time = clock();
 		param->Tag++;
 		size_t count = 500000;
 		size_t i;
@@ -182,12 +182,7 @@ static void *createEx(void *arg)
 
 			// sprintf(temp,"topic %lld ",Tag);
 			int topiclen = strlen(param->topic);
-#ifdef USE_TIMESTAMP_AS_TAG
-			time_t ts = time(NULL);
-			td->Tag = ts;
-#else
 			td->Tag = param->Tag;
-#endif
 			td->len = param->jsonlen;
 			memcpy(td->Value, param->json, param->jsonlen);
 			memcpy(td->Topic, param->topic, topiclen);
@@ -215,8 +210,8 @@ static void *createEx(void *arg)
 			param->Tag++;
 		}
 		clock_t second_time = clock();
-		printf("index:%d,ms:%lf\n", lun, (double)((second_time - t1) / 1000));
-		printf("index:%d,s:%lf\n", lun, (double)((second_time - t1) / CLOCKS_PER_SEC));
+		printf("index:%d,ms:%lf\n", lun, (double)((second_time - time) / 1000));
+		printf("index:%d,s:%lf\n", lun, (double)((second_time - time) / CLOCKS_PER_SEC));
 
 		sleep(1);
 	}
@@ -255,7 +250,7 @@ void *createSHM(key_t key, int *id)
         perror("ftok");
     }*/
 	/*创建共享内存*/
-	shmid = shmget(key, MAX_SHARE_MEM_SIZE, IPC_CREAT | 0600);
+	shmid = shmget(key, MAX_SHARE_MEM_SIZE, IPC_CREAT | 666);
 	if (shmid < 0)
 	{
 		perror("shmget");
@@ -323,7 +318,7 @@ void* createSHMDefault(key_t key, int *id)
 
     /*创建共享内存*/
     int size = sizeof(SHMI);
-    int shmid = shmget(key, size, IPC_CREAT | 600);
+    int shmid = shmget(key, size, IPC_CREAT | 666);
     if (shmid < 0)
     {
         perror("shmget");
@@ -355,13 +350,13 @@ int main(/*int argc, char *argv[]*/)
 #ifdef TEST_SHMI
     int id = 0;
    void* shmadd= createSHMDefault(999999,&id);
-    printf("shmid:%d\r\n",id);
+    printf("shmid:%d\n",id);
 
-    printf("sizeof:shmi:%ld\n",sizeof(SHMI));
+    printf("sizeof:shmi:%d\n",sizeof(SHMI));
     SHMI shmi;
-    shmi.max_topic_len =64;
-    shmi.max_content_len=10240;
-    shmi.max_shm_size=1024000;
+    shmi.max_topic_len =TOPIC_LEN;
+    shmi.max_content_len=MAX_CONTENT_LEN;
+    shmi.max_shm_size=MAX_SHARE_MEM_SIZE;
     shmi.count=MAX_THREAD_NUM;
 #endif//
 
@@ -375,7 +370,7 @@ int main(/*int argc, char *argv[]*/)
         shmi.key[j]=202107+j;
 #endif//
 		sprintf(tp->topic, "kill_kafa_%d", j + 1);
-		sprintf(tp->jsonPath, "./example%d.json", j + 1);
+		sprintf(tp->jsonPath, "./example.json", j + 1);
 		tp->writeOffSet = sizeof(Head);
 
 		int len = 0;
@@ -414,7 +409,7 @@ void NormalShareMemory()
 	char *json;
 	int jsonlen;
 	int ret = 0;
-	json = getJsonData("example1.json", &jsonlen);
+	json = getJsonData("example.json", &jsonlen);
 
 	key_t key = 202106;
 	int id = 0;
