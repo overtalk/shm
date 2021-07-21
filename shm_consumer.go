@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"ndr_forward/src/shm/ishm"
 	"ndr_forward/src/shm/shmdata"
+	"time"
 	"unsafe"
 )
+
+type TLVCallBack func(*shmdata.TagTLV)
 
 type ShmConsumerStatus int32
 
@@ -115,4 +118,44 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 		}
 	}
 	return nil, ShmConsumerNoData
+}
+
+func StartSubscribe(key int64, callBack TLVCallBack) bool {
+	shmi, err := shmdata.GetShareMemoryInfo(key)
+	if err != nil{
+		fmt.Printf("Get Config memory err: %v\n", err)
+		return false
+	}
+	for i := 0; uint64(i) <= shmi.Count; i++ {
+		go func() {
+			consumer := Consumer{}
+			if consumer.Init(int64(shmi.Key[i]), shmi.MaxSHMSize, shmi.MaxContentLen){
+				var noDataCnt int32
+				noDataCnt = 0
+				for{
+					tlv,status := consumer.Next()
+					switch status {
+					case ShmConsumerOk:
+						callBack(tlv)
+						noDataCnt = 0
+					case ShmConsumerReadErr:
+						consumer.Reset()
+					case ShmConsumerLenErr:
+						consumer.Reset()
+					case ShmConsumerInitErr:
+						consumer.Init(int64(shmi.Key[i]), shmi.MaxSHMSize, shmi.MaxContentLen)
+					case ShmConsumerNoData:
+						noDataCnt += 1
+						if noDataCnt % 1000 == 0{
+							time.Sleep(time.Millisecond)
+							noDataCnt = 0
+						}
+					default:
+
+					}
+				}
+			}
+		}()
+	}
+	return true
 }

@@ -93,3 +93,32 @@ func main() {
 	}
 }
 ```
+
+### 使用订阅使用
+```bigquery
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/overtalk/shm"
+)
+
+func callBack(*shmdata.TagTLV){
+    //do something
+}
+
+func main(){
+    if shm.StartSubscribe(999999, callBack) {
+        fmt.Println("start alert shm success")
+    }else{
+        fmt.Println("start alert shm failed")
+    }
+    if shm.StartSubscribe(888888, callBack) {
+        fmt.Println("start log shm success")
+    }else{
+        fmt.Println("start log shm failed")
+    }
+}
+```
