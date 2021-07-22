@@ -3,8 +3,8 @@ package shmdata
 import (
 	"errors"
 	"fmt"
-	"github.com/kevinu2/shm/ishm"
 	"log"
+	"github.com/kevinu2/shm/ishm"
 	"reflect"
 	"time"
 	"unsafe"
@@ -43,7 +43,10 @@ var Counter int64 = 0
 type TagTLV struct {
 	Tag   int64
 	Len   uint64
-	Topic [64]byte
+	TopicLen uint16
+	EventTypeLen uint16
+	Topic [30]byte
+	EventType [30]byte
 	Value [40960]byte
 }
 
@@ -88,7 +91,7 @@ func ReadTLVData(segment *ishm.Segment, offset int64) (*TagTLV, int64, error) {
 	last := time.Unix(int64(tll.Tag), 0)
 
 	if now > last.Unix() {
-		log.Println("will be wait ,now: %d,last:%d\n", now, last.Unix())
+		log.Printf("will be wait ,now: %d,last:%d\n", now, last.Unix())
 		//time.Sleep(time.Second)
 		//return nil,retOffset,nil
 	}
@@ -155,7 +158,6 @@ func Readtlv(k int64) {
 			log.Printf("key = %v use time %v \r\n", k, T2.Sub(T1).Seconds())
 			time.Sleep(time.Second * 2)
 			T1 = time.Now()
-
 		}
 	}
 }
