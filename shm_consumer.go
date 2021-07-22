@@ -2,8 +2,8 @@ package shm
 
 import (
 	"fmt"
-	"ndr_forward/src/shm/ishm"
-	"ndr_forward/src/shm/shmdata"
+	"github.com/kevinu2/shm/ishm"
+	"github.com/kevinu2/shm/shmdata"
 	"time"
 	"unsafe"
 )
