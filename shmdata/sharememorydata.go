@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"shm/ishm"
+	"github.com/kevinu2/shm/ishm"
 	"time"
 	"unsafe"
 )
