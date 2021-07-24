@@ -55,7 +55,7 @@ func WriteReadSHMI() {
 	sm.Destroy()
 }
 func testReadSHMByDefaultSHMI(){
-	shmi, err := ishm.GetShareMemoryInfo(999999)
+	shmi, err := ishm.GetShareMemoryInfo(999999,false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,15 +86,35 @@ func testProducer()  {
 	if err != nil {
 		log.Fatal(err)
 	}
-	shmParam:= ishm.CreateSHMParam{4567,2000}
-	ctx:= ishm.UpdateContent{EventType: 11,Topic: "xxx",Content: string(od)}
+	shmParam:= ishm.CreateSHMParam{4567,2000,true}
+	ctx:= ishm.UpdateContent{EventType: "data-event",Topic: "xxx",Content: string(od)}
 	ishm.UpdateCtx(shmParam,ctx)
 	readDataFromSHM,err:= ishm.GetCtx(shmParam)
+
+
 
 	if err !=nil {
 
 	}else {
 		log.Println("read data form shm is:%#v",readDataFromSHM)
+	}
+
+	var counter int = 0
+	for  {
+
+		shmParam.Create=false
+		ishm.UpdateCtx(shmParam,ctx)
+		readDataFromSHM,err= ishm.GetCtx(shmParam)
+		if err !=nil {
+
+		}else {
+			log.Println("read data form shm is:%#v",readDataFromSHM)
+		}
+		counter++
+		if counter > 10 {
+			 break
+		}
+
 	}
 
 
