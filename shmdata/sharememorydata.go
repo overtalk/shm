@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"github.com/kevinu2/shm/ishm"
 	"reflect"
+	"shm/ishm"
 	"time"
 	"unsafe"
 )
