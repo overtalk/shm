@@ -40,7 +40,7 @@ func WriteReadSHMI() {
 	fmt.Printf("buferlen:%v\n", shmilen)
 	od, err := sm.ReadChunk(int64(shmilen), 0)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
 	}
 	buf.Reset()
 	buf.Write(od)
@@ -48,7 +48,7 @@ func WriteReadSHMI() {
 	smrd := ishm.SHMInfo{}
 	err = decoder.Decode(&smrd)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
 	}
 	fmt.Printf("shm read:%#v\n", smrd)
 	fmt.Printf("sm:%#v\n", sm)
@@ -120,5 +120,6 @@ func testProducer()  {
 
 }
 func main() {
+
 	testProducer()
 }

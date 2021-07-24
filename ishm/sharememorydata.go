@@ -70,7 +70,7 @@ func GetHeadData(segment *Segment) (*HeadData, error) {
 	h := HeadData{}
 	od, err := segment.ReadChunk(int64(unsafe.Sizeof(h)), 0)
 	if err != nil {
-		log.Fatal(err)
+		return nil,err
 	}
 	data := *(*[]byte)(unsafe.Pointer(&od))
 	var hd *HeadData = *(**HeadData)(unsafe.Pointer(&data))
@@ -84,7 +84,9 @@ func ReadTLVData(segment *Segment, offset int64) (*TagTLV, int64, error) {
 	var retOffset int64 = offset
 	od, err := segment.ReadChunk(int64(unsafe.Sizeof(tl)), offset)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		return nil,0,err
+
 	}
 	data := *(*[]byte)(unsafe.Pointer(&od))
 	var tll *TagTL = *(**TagTL)(unsafe.Pointer(&data))
@@ -104,7 +106,8 @@ func ReadTLVData(segment *Segment, offset int64) (*TagTLV, int64, error) {
 	datalen := int64(unsafe.Sizeof(tl)) + int64(64) + int64(tll.Len) // SizeStruct(tlv)
 	od, err = segment.ReadChunk(datalen, offset)
 	if err != nil {
-		log.Fatal(err)
+
+		return nil,0,err
 	}
 	data = *(*[]byte)(unsafe.Pointer(&od))
 	var readtlv *TagTLV = &tlv
@@ -135,7 +138,8 @@ func Bytes2String(b []byte) string {
 func Readtlv(k int64) {
 	sm, err := CreateWithKey(int64(k), 0)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		return
 	}
 	log.Print(sm)
 	var offset int64 = 16
@@ -173,12 +177,14 @@ func GetShareMemoryInfo(defaultKey int64,create bool) (*SHMInfo, error) {
 	}
 	sm, err := CreateWithKey(defaultKey, size)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
 		sm.Destroy()
+		return nil, err
 	}
 	od, err := sm.ReadChunk(int64(unsafe.Sizeof(shmi)), 0)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		return nil,err
 	}
 	data := *(*[]byte)(unsafe.Pointer(&od))
 	var readshmi *SHMInfo = *(**SHMInfo)(unsafe.Pointer(&data))
@@ -196,10 +202,16 @@ func SHMInfoStructToBytes(s *SHMInfo) []byte {
 	x.Data = uintptr(unsafe.Pointer(s))
 	return *(*[]byte)(unsafe.Pointer(&x))
 }
+func BytesToSHMInfoStruct(b []byte) *SHMInfo {
+	return (*SHMInfo)(unsafe.Pointer(
+		(*reflect.SliceHeader)(unsafe.Pointer(&b)).Data,
+	))
+}
 func updateSHMInfo(defaultKey, newKey int64) {
 	shmi, smd, err := getShareMemoryInfoEx(defaultKey)
 	if err != nil {
-		log.Print(err)
+		return
+	//	log.Print(err)
 	}
 	var findkey bool = false
 	for index, k := range shmi.Key {
@@ -222,21 +234,30 @@ func updateSHMInfo(defaultKey, newKey int64) {
 }
 func getShareMemoryInfoEx(defaultKey int64) (*SHMInfo, *Segment, error) {
 
-	ST1 = time.Now()
-	shmi := SHMInfo{}
-	sm, err := CreateWithKey(defaultKey, int64(sizeOfSHMInfoStruct))
+	has:=HasKeyofSHM(defaultKey)
+	Size:=int64(sizeOfSHMInfoStruct)
+	if has {
+		Size=0
+	}
+	sm, err := CreateWithKey(defaultKey, Size)
 	if err != nil {
-		log.Fatal(err)
 		sm.Destroy()
+		return nil,nil,err
 	}
-	od, err := sm.ReadChunk(int64(unsafe.Sizeof(shmi)), 0)
+	dd:=make([]byte ,sizeOfSHMInfoStruct)
+	_, err = sm.Read(dd)
 	if err != nil {
-		log.Fatal(err)
+		return nil,sm,err
+	//	log.Fatal(err)
 	}
-	data := *(*[]byte)(unsafe.Pointer(&od))
-	var readshmi *SHMInfo = *(**SHMInfo)(unsafe.Pointer(&data))
+
+
+	//data := *(*[]byte)(unsafe.Pointer(&od))
+	//var readshmi *SHMInfo = *(**SHMInfo)(unsafe.Pointer(&data))
+
+	//fmt.Printf("sm:%#v\n", sm)
+	readshmi:=BytesToSHMInfoStruct(dd)
 	fmt.Printf("shmiii:%#v\r\n", readshmi)
-	fmt.Printf("sm:%#v\n", sm)
 	return readshmi, sm, err
 }
 
