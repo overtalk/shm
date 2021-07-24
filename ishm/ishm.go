@@ -165,26 +165,7 @@ func (s *Segment) ReadObj(key *interface{}) (n int, err error) {
 
 	return n, err
 }
-func (s *Segment) ReadObjCtx(ctx *UpdateContent) (n int, err error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err = enc.Encode(*ctx)
-	if err != nil {
-		return 0, err
-	}
-	data := make([]byte, buf.Len())
-	n, err = s.Read(data)
-	if err != nil {
 
-	} else {
-		buf.Reset()
-		buf.Write(data)
-		dec := gob.NewDecoder(&buf)
-		dec.Decode(ctx)
-	}
-
-	return n, err
-}
 
 // Implements the io.Writer interface for shared memory
 //
