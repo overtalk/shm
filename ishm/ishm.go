@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"shm/shmdata"
 	"unsafe"
 )
 
@@ -24,7 +23,7 @@ const (
 
 // Segment is a native representation of a SysV shared memory segment
 type Segment struct {
-	Key	   int64
+	Key    int64
 	Id     int64
 	Size   int64
 	offset int64
@@ -36,8 +35,8 @@ type Segment struct {
 func Create(size int64) (*Segment, error) {
 	return OpenSegment(size, (IpcCreate | IpcExclusive), 0600)
 }
-func CreateWithKey(key  ,size int64) (*Segment, error) {
-	return OpenSegmentWithKey(key,size, (IpcCreate | IpcExclusive ), 0600)
+func CreateWithKey(key, size int64) (*Segment, error) {
+	return OpenSegmentWithKey(key, size, (IpcCreate | IpcExclusive), 0600)
 }
 
 // Open an existing shared memory segment located at the given ID.  This ID is returned in the
@@ -71,15 +70,15 @@ func OpenSegment(size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segme
 	}
 	return nil, err
 }
-func OpenSegmentWithKey(key ,size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segment, error) {
+func OpenSegmentWithKey(key, size int64, flags SharedMemoryFlags, perms os.FileMode) (*Segment, error) {
 	var err error
-	if shmid, err := C.sysv_shm_open_with_key(C.int(key),C.int(size), C.int(flags), C.int(perms)); err == nil {
+	if shmid, err := C.sysv_shm_open_with_key(C.int(key), C.int(size), C.int(flags), C.int(perms)); err == nil {
 		actualSize, err := C.sysv_shm_get_size(shmid)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to retrieve SHM size: %v", err)
 		}
 		return &Segment{
-			Key: key,
+			Key:  key,
 			Id:   int64(shmid),
 			Size: int64(actualSize),
 		}, nil
@@ -145,45 +144,45 @@ func (s *Segment) Read(p []byte) (n int, err error) {
 	return v, io.EOF
 }
 
-func (s *Segment) ReadObj(key* interface{}) (n int, err error) {
+func (s *Segment) ReadObj(key *interface{}) (n int, err error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(*key)
 	if err != nil {
 		return 0, err
 	}
-	data:=make([]byte,buf.Len())
-	n,err= s.Read(data)
+	data := make([]byte, buf.Len())
+	n, err = s.Read(data)
 	if err != nil {
 
-	}else {
+	} else {
 		buf.Reset()
 		buf.Write(data)
-		dec:=gob.NewDecoder(&buf)
+		dec := gob.NewDecoder(&buf)
 		dec.Decode(key)
 	}
 
-	return  n,err
+	return n, err
 }
-func (s *Segment) ReadObjCtx(ctx* shmdata.UpdateContent) (n int, err error) {
+func (s *Segment) ReadObjCtx(ctx *UpdateContent) (n int, err error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err = enc.Encode(*ctx)
 	if err != nil {
 		return 0, err
 	}
-	data:=make([]byte,buf.Len())
-	n,err= s.Read(data)
+	data := make([]byte, buf.Len())
+	n, err = s.Read(data)
 	if err != nil {
 
-	}else {
+	} else {
 		buf.Reset()
 		buf.Write(data)
-		dec:=gob.NewDecoder(&buf)
+		dec := gob.NewDecoder(&buf)
 		dec.Decode(ctx)
 	}
 
-	return  n,err
+	return n, err
 }
 
 // Implements the io.Writer interface for shared memory
@@ -213,7 +212,7 @@ func (s *Segment) Write(p []byte) (n int, err error) {
 		return int(length), nil
 	}
 }
-func(s *Segment)  GetBytes(key interface{}) ([]byte, error) {
+func (s *Segment) GetBytes(key interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(key)
@@ -224,9 +223,9 @@ func(s *Segment)  GetBytes(key interface{}) ([]byte, error) {
 }
 func (s *Segment) WriteObj(key interface{}) (n int, err error) {
 	// if the offset runs past the segment size, we've reached the end
-	data,err:=s.GetBytes(key)
+	data, err := s.GetBytes(key)
 	if err != nil {
-		return 0,err
+		return 0, err
 	}
 	return s.Write(data)
 }
