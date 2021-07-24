@@ -5,20 +5,46 @@ import (
 	"shm/ishm"
 )
 
-func Update(eventType,topic ,content string) (index int, err error){
+type CreateSHMParam struct {
+	Key int64
+	Size int64
+}
+type UpdateContent struct {
+	EventType int16
+	Topic string
+	Content string
+}
+func UpdateCtx(shmparm CreateSHMParam, updatectx UpdateContent) (index int, err error){
 
-	sm,err:=ishm.CreateWithKey(888,int64(2000))
-
+	sm,err:=ishm.CreateWithKey(shmparm.Key,shmparm.Size)
 	if err != nil {
 		log.Fatal(err)
 		return index,err
 	}
 	log.Print(sm)
+	pos ,err:=sm.WriteObj(updatectx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print(pos)
 
-	tlv:=TagTLV{}
-	tlv.Len=uint64(len(topic))
+	return pos,err
+}
+func GetCtx(shmparm CreateSHMParam) ( updatectx* UpdateContent, err error){
 
-	return  nil
+	sm,err:=ishm.CreateWithKey(shmparm.Key,0)
+	if err != nil {
+		log.Fatal(err)
+		return updatectx,err
+	}
+	log.Print(sm)
+	pos ,err:=sm.ReadObjCtx(updatectx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print(pos)
+
+	return updatectx,err
 }
 //type TLVCalBack func(*shmdata.TagTLV)
 //
