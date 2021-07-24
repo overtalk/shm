@@ -164,11 +164,14 @@ func Readtlv(k int64) {
 }
 
 //todo  run it use root
-func GetShareMemoryInfo(defaultKey int64) (*SHMInfo, error) {
-
+func GetShareMemoryInfo(defaultKey int64,create bool) (*SHMInfo, error) {
 	ST1 = time.Now()
 	shmi := SHMInfo{}
-	sm, err := CreateWithKey(defaultKey, 0)
+	var size int64 = 0
+	if create {
+		size=int64(sizeOfSHMInfoStruct)
+	}
+	sm, err := CreateWithKey(defaultKey, size)
 	if err != nil {
 		log.Fatal(err)
 		sm.Destroy()

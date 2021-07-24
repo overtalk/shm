@@ -119,7 +119,7 @@ func (consumer *Consumer) Next() (*TagTLV, ShmConsumerStatus) {
 }
 
 func StartSubscribe(key int64, callBack TLVCallBack) bool {
-	shmi, err := GetShareMemoryInfo(key)
+	shmi, err := GetShareMemoryInfo(key,false)
 	if err != nil {
 		fmt.Printf("Get Config memory err: %v\n", err)
 		return false

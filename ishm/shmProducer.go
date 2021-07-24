@@ -6,16 +6,17 @@ import (
 	"unsafe"
 )
 
-
 type CreateSHMParam struct {
-	Key int64
-	Size int64
+	Key    int64
+	Size   int64
+	Create bool
 }
 type UpdateContent struct {
-	EventType int16
-	Topic string
-	Content string
+	EventType string
+	Topic     string
+	Content   string
 }
+
 func StringToByteArr(s string, arr []byte) {
 	src := []rune(s)
 	for i, v := range src {
@@ -42,51 +43,60 @@ func BytesToTagTLVStruct(b []byte) *TagTLV {
 	))
 }
 
-func UpdateCtx(shmparam CreateSHMParam, updatectx UpdateContent) (index int, err error){
+func UpdateCtx(shmparam CreateSHMParam, updatectx UpdateContent) (index int, err error) {
 
-	log.Printf("UpdateCtx:%#v,%#v",shmparam,updatectx)
-	updateSHMInfo(999999,shmparam.Key)
-
-	tlv:=TagTLV{}
+	log.Printf("UpdateCtx:%#v,%#v", shmparam, updatectx)
+	tlv := TagTLV{}
 	if shmparam.Size < int64(unsafe.Sizeof(tlv)) {
-		shmparam.Size =int64(unsafe.Sizeof(tlv))
+		shmparam.Size = int64(unsafe.Sizeof(tlv))
 	}
-	sm,err:= CreateWithKey(shmparam.Key,shmparam.Size)
+
+	if shmparam.Create {
+		updateSHMInfo(999999, shmparam.Key)
+	} else {
+		shmparam.Size = 0
+	}
+	sm, err := CreateWithKey(shmparam.Key, shmparam.Size)
+
 	if err != nil {
 		log.Fatal(err)
-		return index,err
+		return index, err
 	}
-	tlv.Tag=1
-	tlv.Len=uint64(len(updatectx.Content))
-	StringToByteArr(updatectx.Topic,tlv.Topic[:])
-	StringToByteArr(updatectx.Content,tlv.Value[:])
-	wd:=TagTLVStructToBytes(&tlv)
+	tlv.Tag = 1
+	tlv.Len = uint64(len(updatectx.Content))
+	tlv.EventTypeLen = uint16(len(updatectx.EventType))
+
+	StringToByteArr(updatectx.Topic, tlv.Topic[:])
+	StringToByteArr(updatectx.Content, tlv.Value[:])
+	StringToByteArr(updatectx.EventType, tlv.EventType[:])
+	wd := TagTLVStructToBytes(&tlv)
 	sm.Write(wd)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	return int(sm.Id),err
+	return int(sm.Id), err
 }
-func GetCtx(shmparam CreateSHMParam)   (*UpdateContent,error){
-	log.Printf("GetCtx:%#v",shmparam)
-	sm,err:= CreateWithKey(shmparam.Key,0)
+func GetCtx(shmparam CreateSHMParam) (*UpdateContent, error) {
+	log.Printf("GetCtx:%#v", shmparam)
+	sm, err := CreateWithKey(shmparam.Key, 0)
 	if err != nil {
 		log.Fatal(err)
-		return nil,err
+		return nil, err
 	}
 	log.Print(sm)
-	data:=make([]byte,sizeOfTagTLVStruct)
-	pos ,err:=sm.Read(data)
-	if err !=nil {
+	data := make([]byte, sizeOfTagTLVStruct)
+	pos, err := sm.Read(data)
+	if err != nil {
 		log.Fatal(err)
-		return nil,err
+		return nil, err
 	}
 	log.Println(pos)
-	tlv:=BytesToTagTLVStruct(data)
-	ctd:=new(UpdateContent)
-	ctd.Topic=string(tlv.Topic[:])
-	ctd.Content=string(tlv.Value[:])
+	tlv := BytesToTagTLVStruct(data)
+	ctd := new(UpdateContent)
+	ctd.Topic = string(tlv.Topic[:])
+	ctd.Content = string(tlv.Value[:])
+	ctd.EventType = string(tlv.EventType[:])
 
-	return ctd,nil
+	return ctd, nil
 }
