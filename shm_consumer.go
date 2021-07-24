@@ -3,12 +3,11 @@ package shm
 import (
 	"fmt"
 	"github.com/kevinu2/shm/ishm"
-	"github.com/kevinu2/shm/shmdata"
 	"time"
 	"unsafe"
 )
 
-type TLVCallBack func(*shmdata.TagTLV)
+type TLVCallBack func(*ishm.TagTLV)
 
 type ShmConsumerStatus int32
 
@@ -59,7 +58,7 @@ func (consumer *Consumer)Reset() {
 	consumer.IsRunning = false
 }
 
-func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
+func (consumer *Consumer)Next() (*ishm.TagTLV, ShmConsumerStatus){
 	//tl := shmdata.TagTL{}
 	//od, err := consumer.sm.ReadChunk(int64(unsafe.Sizeof(shmdata.TagTL)), int64(consumer.CurOffset))
 	if consumer.sm == nil{
@@ -70,7 +69,7 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 		return nil, ShmConsumerReadErr
 	}
 	data := *(*[]byte)(unsafe.Pointer(&od))
-	var tll *shmdata.TagTL = *(**shmdata.TagTL)(unsafe.Pointer(&data))
+	var tll *ishm.TagTL = *(**ishm.TagTL)(unsafe.Pointer(&data))
 	if tll.Len > consumer.MaxContentLen{
 		return nil, ShmConsumerLenErr
 	}
@@ -89,7 +88,7 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 			consumer.IsRunning = true
 			data = *(*[]byte)(unsafe.Pointer(&od))
 			//readtlv = *(**shmdata.TagTLV)(unsafe.Pointer(&data))
-			return *(**shmdata.TagTLV)(unsafe.Pointer(&data)), ShmConsumerOk
+			return *(**ishm.TagTLV)(unsafe.Pointer(&data)), ShmConsumerOk
 		}
 	}else{
 		if consumer.CurOffset != 16{
@@ -100,7 +99,7 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 				return nil, ShmConsumerReadErr
 			}
 			data := *(*[]byte)(unsafe.Pointer(&od))
-			var headTll *shmdata.TagTL = *(**shmdata.TagTL)(unsafe.Pointer(&data))
+			var headTll *ishm.TagTL = *(**ishm.TagTL)(unsafe.Pointer(&data))
 			if headTll.Len > 0 && (headTll.Tag > consumer.PreTag || (headTll.Tag == 0 && consumer.PreTag == 18446744073709551615)){
 				//new cycle
 				consumer.PreOffset = consumer.CurOffset
@@ -113,7 +112,7 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 				consumer.IsRunning = true
 				data = *(*[]byte)(unsafe.Pointer(&od))
 				//readtlv = *(**shmdata.TagTLV)(unsafe.Pointer(&data))
-				return *(**shmdata.TagTLV)(unsafe.Pointer(&data)), ShmConsumerOk
+				return *(**ishm.TagTLV)(unsafe.Pointer(&data)), ShmConsumerOk
 			}
 		}
 	}
@@ -121,7 +120,7 @@ func (consumer *Consumer)Next() (*shmdata.TagTLV, ShmConsumerStatus){
 }
 
 func StartSubscribe(key int64, callBack TLVCallBack) bool {
-	shmi, err := shmdata.GetShareMemoryInfo(key)
+	shmi, err := ishm.GetShareMemoryInfo(key)
 	if err != nil{
 		fmt.Printf("Get Config memory err: %v\n", err)
 		return false
