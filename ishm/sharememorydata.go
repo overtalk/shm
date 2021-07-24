@@ -40,18 +40,18 @@ var MCL uint = 102400
 var Counter int64 = 0
 
 type TagTLV struct {
-	Tag   int64
-	Len   uint64
-	TopicLen uint16
+	Tag          int64
+	Len          uint64
+	TopicLen     uint16
 	EventTypeLen uint16
-	Topic [30]byte
-	EventType [30]byte
-	Value [40960]byte
+	Topic        [30]byte
+	EventType    [30]byte
+	Value        [40960]byte
 }
 
 type ContentData struct {
 	Tag   int64
-	Topic  string
+	Topic string
 	Value string
 }
 type TagTL struct {
@@ -62,8 +62,10 @@ type HeadData struct {
 	ReadOffSet  uint64
 	WriteOffSet uint64
 }
+
 var ST1 time.Time
 var ST2 time.Time
+
 func GetHeadData(segment *Segment) (*HeadData, error) {
 	h := HeadData{}
 	od, err := segment.ReadChunk(int64(unsafe.Sizeof(h)), 0)
@@ -114,16 +116,16 @@ func ReadTLVData(segment *Segment, offset int64) (*TagTLV, int64, error) {
 	content := string(readtlv.Value[:])
 	//fmt.Printf("content:%s\n", content)
 	Counter++
-	ST2 =time.Now()
-	if ST2.Sub(ST1).Seconds() >10.000 {
-		log.Printf("data %v per sec\r\n",float64(Counter)/ST2.Sub(ST1).Seconds())
+	ST2 = time.Now()
+	if ST2.Sub(ST1).Seconds() > 10.000 {
+		log.Printf("data %v per sec\r\n", float64(Counter)/ST2.Sub(ST1).Seconds())
 		Counter = 0
-		ST1 =time.Now()
+		ST1 = time.Now()
 	}
-	contentData:= ContentData{}
-	contentData.Tag=readtlv.Tag
-	contentData.Topic=topic
-	contentData.Value=content
+	contentData := ContentData{}
+	contentData.Tag = readtlv.Tag
+	contentData.Topic = topic
+	contentData.Value = content
 
 	return readtlv, retOffset, err
 }
@@ -180,6 +182,59 @@ func GetShareMemoryInfo(defaultKey int64) (*SHMInfo, error) {
 	fmt.Printf("shmiii:%#v\r\n", readshmi)
 	fmt.Printf("sm:%#v\n", sm)
 	return readshmi, err
+}
+
+var sizeOfSHMInfoStruct = int(unsafe.Sizeof(SHMInfo{}))
+
+func SHMInfoStructToBytes(s *SHMInfo) []byte {
+	var x reflect.SliceHeader
+	x.Len = sizeOfSHMInfoStruct
+	x.Cap = sizeOfSHMInfoStruct
+	x.Data = uintptr(unsafe.Pointer(s))
+	return *(*[]byte)(unsafe.Pointer(&x))
+}
+func updateSHMInfo(defaultKey, newKey int64) {
+	shmi, smd, err := getShareMemoryInfoEx(defaultKey)
+	if err != nil {
+		log.Print(err)
+	}
+	var findkey bool = false
+	for index, k := range shmi.Key {
+		if index == int(shmi.Count) {
+			break
+		}
+		if int64(k) == newKey {
+			findkey = true
+			break
+		}
+	}
+	if !findkey {
+		shmi.Key[shmi.Count] = int32(newKey)
+		shmi.Count++
+	}
+
+	smd.Reset()
+	log.Print(shmi)
+	smd.Write(SHMInfoStructToBytes(shmi))
+}
+func getShareMemoryInfoEx(defaultKey int64) (*SHMInfo, *Segment, error) {
+
+	ST1 = time.Now()
+	shmi := SHMInfo{}
+	sm, err := CreateWithKey(defaultKey, int64(sizeOfSHMInfoStruct))
+	if err != nil {
+		log.Fatal(err)
+		sm.Destroy()
+	}
+	od, err := sm.ReadChunk(int64(unsafe.Sizeof(shmi)), 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := *(*[]byte)(unsafe.Pointer(&od))
+	var readshmi *SHMInfo = *(**SHMInfo)(unsafe.Pointer(&data))
+	fmt.Printf("shmiii:%#v\r\n", readshmi)
+	fmt.Printf("sm:%#v\n", sm)
+	return readshmi, sm, err
 }
 
 func SizeStruct(data interface{}) int {

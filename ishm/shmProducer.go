@@ -43,7 +43,10 @@ func BytesToTagTLVStruct(b []byte) *TagTLV {
 }
 
 func UpdateCtx(shmparam CreateSHMParam, updatectx UpdateContent) (index int, err error){
+
 	log.Printf("UpdateCtx:%#v,%#v",shmparam,updatectx)
+	updateSHMInfo(999999,shmparam.Key)
+
 	tlv:=TagTLV{}
 	if shmparam.Size < int64(unsafe.Sizeof(tlv)) {
 		shmparam.Size =int64(unsafe.Sizeof(tlv))
