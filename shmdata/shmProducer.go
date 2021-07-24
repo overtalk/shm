@@ -1,8 +1,8 @@
 package shmdata
 
 import (
+	"github.com/kevinu2/shm/ishm"
 	"log"
-	"shm/ishm"
 )
 
 type CreateSHMParam struct {
