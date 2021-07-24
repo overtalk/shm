@@ -86,7 +86,6 @@ func CmdAndChangeDirToShow(commandName string, params []string,key int64) (error
 		}
 		keystr := strconv.FormatInt(key, 16)
 		ss:=strings.Split(line," ")
-
 		if strings.Contains(ss[0],keystr) {
 			find = true
 			fmt.Println("find ......")

@@ -172,7 +172,7 @@ func GetShareMemoryInfo(defaultKey int64,create bool) (*SHMInfo, error) {
 	ST1 = time.Now()
 	shmi := SHMInfo{}
 	var size int64 = 0
-	if create {
+	if create || !HasKeyofSHM(defaultKey){
 		size=int64(sizeOfSHMInfoStruct)
 	}
 	sm, err := CreateWithKey(defaultKey, size)
