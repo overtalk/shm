@@ -90,11 +90,14 @@ func testProducer()  {
 	ctx:= ishm.UpdateContent{EventType: 11,Topic: "xxx",Content: string(od)}
 	ishm.UpdateCtx(shmParam,ctx)
 	readDataFromSHM,err:= ishm.GetCtx(shmParam)
+
 	if err !=nil {
-		log.Fatal(err)
+
 	}else {
 		log.Println("read data form shm is:%#v",readDataFromSHM)
 	}
+
+
 }
 func main() {
 	testProducer()
