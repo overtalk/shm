@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"unsafe"
 )
@@ -190,6 +191,7 @@ func (s *Segment) ReadObjCtx(ctx *UpdateContent) (n int, err error) {
 func (s *Segment) Write(p []byte) (n int, err error) {
 	// if the offset runs past the segment size, we've reached the end
 	if s.offset >= s.Size {
+		log.Printf("s.offset:%v >= s.Size:%v",s.offset,s.Size)
 		return 0, io.EOF
 	}
 
