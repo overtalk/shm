@@ -37,7 +37,10 @@ func Create(size int64) (*Segment, error) {
 	return OpenSegment(size, (IpcCreate | IpcExclusive), 0600)
 }
 func CreateWithKey(key, size int64) (*Segment, error) {
-	return OpenSegmentWithKey(key, size, (IpcCreate | IpcExclusive), 0600)
+	if size > 0 {
+		return OpenSegmentWithKey(key, size, (IpcCreate | IpcExclusive), 0600)
+	}
+	return OpenSegmentWithKey(key, size, IpcNone, 0600)
 }
 
 // Open an existing shared memory segment located at the given ID.  This ID is returned in the

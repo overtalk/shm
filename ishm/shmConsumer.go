@@ -124,7 +124,7 @@ func StartSubscribe(key int64, callBack TLVCallBack) bool {
 		fmt.Printf("Get Config memory err: %v\n", err)
 		return false
 	}
-	for i := 0; uint64(i) <= shmi.Count; i++ {
+	for i := 0; uint64(i) < shmi.Count; i++ {
 		go func() {
 			consumer := Consumer{}
 			if consumer.Init(int64(shmi.Key[i]), shmi.MaxSHMSize, shmi.MaxContentLen) {
