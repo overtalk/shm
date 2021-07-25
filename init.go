@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/overtalk/shm/model"
-	"github.com/overtalk/shm/queue"
+	"github.com/kevinu2/shm/model"
+	"github.com/kevinu2/shm/queue"
 )
 
 type ConstructorFunc func() interface{}
@@ -73,4 +73,24 @@ func (s *SHM) Get() ([]interface{}, error) {
 	}
 
 	return ret, nil
+}
+
+func (s *SHM) GetByIndex(index int) (interface{}, error) {
+	data, err := s.shmQueue.Get()
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range data {
+		temp := s.constructor()
+		err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(temp)
+		if err != nil {
+			return nil, err
+		}
+
+		if index == k {
+			return temp, err
+		}
+	}
+
+	return nil, nil
 }

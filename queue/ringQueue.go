@@ -3,7 +3,7 @@ package queue
 import (
 	"errors"
 
-	"github.com/overtalk/shm/model"
+	"github.com/kevinu2/shm/model"
 )
 
 // 一个生产者 & 一个消费者的情况之下
