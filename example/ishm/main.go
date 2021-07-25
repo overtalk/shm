@@ -102,6 +102,11 @@ func testProducer()  {
 	var counter int = 0
 	for  {
 
+		shareshminfo,err:=ishm.GetShareMemoryInfo(999999,false)
+		if err !=nil {
+
+		}
+		log.Print(shareshminfo)
 		shmParam.Create=false
 		ishm.UpdateCtx(shmParam,ctx)
 		readDataFromSHM,err= ishm.GetCtx(shmParam)
