@@ -135,6 +135,15 @@ func ReadTLVData(segment *Segment, offset int64) (*TagTLV, int64, error) {
 func Bytes2String(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
+func byteArrayToString(b []byte ,len int)string  {
+	var str string
+	var i int = 0
+	for  i = 0;i < len;i++{
+		s := fmt.Sprintf("%c", b[i])
+		str=str+s
+	}
+	return str
+}
 func Readtlv(k int64) {
 	sm, err := CreateWithKey(int64(k), 0)
 	if err != nil {

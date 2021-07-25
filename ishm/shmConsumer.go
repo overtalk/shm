@@ -2,6 +2,7 @@ package ishm
 
 import (
 	"fmt"
+	"log"
 	"time"
 	"unsafe"
 )
@@ -36,6 +37,9 @@ type Consumer struct {
 
 func (consumer *Consumer) Init(key int64, maxSHMSize uint64, maxContentLen uint64) bool {
 	consumer.ShmKey = key
+	if !HasKeyofSHM(key) {
+		return false
+	}
 	sm, err := CreateWithKey(key, 0)
 	if err != nil {
 		fmt.Printf("Init consume err key-%v\n\n", key)
@@ -112,6 +116,60 @@ func (consumer *Consumer) Next() (*TagTLV, ShmConsumerStatus) {
 				data = *(*[]byte)(unsafe.Pointer(&od))
 				//readtlv = *(**shmdata.TagTLV)(unsafe.Pointer(&data))
 				return *(**TagTLV)(unsafe.Pointer(&data)), ShmConsumerOk
+			}
+		}
+	}
+	return nil, ShmConsumerNoData
+}
+
+func (consumer *Consumer) AutoNext() (*TagTLV, ShmConsumerStatus) {
+	//tl := shmdata.TagTL{}
+	//od, err := consumer.sm.ReadChunk(int64(unsafe.Sizeof(shmdata.TagTL)), int64(consumer.CurOffset))
+	//var tlv* TagTLV = nil
+	if consumer.sm == nil {
+		return nil, ShmConsumerInitErr
+	}
+
+	dd :=make([]byte,sizeOfTagTLVStruct)
+	pos,err:=consumer.sm.Read(dd)
+	if err != nil{
+
+	}
+	log.Println(pos)
+
+	tlv:=BytesToTagTLVStruct(dd)
+
+	if tlv.Len > consumer.MaxContentLen {
+		return tlv, ShmConsumerLenErr
+	}
+
+	if tlv.Len > 0 {
+		if uint64(tlv.Tag) > consumer.PreTag || tlv.Tag == 0 || consumer.PreTag == 18446744073709551615 || consumer.PreTag == 0 {
+
+			consumer.PreTag = uint64(tlv.Tag)
+			consumer.PreOffset = consumer.CurOffset
+			consumer.CurOffset += consumer.SegLen
+			if consumer.CurOffset+consumer.SegLen > consumer.MaxShmSize {
+				fmt.Printf("Worker-%v new cycle\n", consumer.ShmKey)
+				consumer.CurOffset = 16
+			}
+			consumer.IsRunning = true
+			return tlv,ShmConsumerOk
+
+		}
+	} else {
+		if consumer.CurOffset != 16 {
+			if tlv.Len > 0 &&
+				(uint64(tlv.Tag) > consumer.PreTag || (tlv.Tag == 0 && consumer.PreTag == 18446744073709551615)) {
+
+				consumer.PreOffset = consumer.CurOffset
+				fmt.Printf("Worker-%v new cycle headtag-%v\n", consumer.ShmKey, tlv.Tag)
+
+				consumer.PreTag = uint64(tlv.Tag)
+				consumer.CurOffset = consumer.SegLen + 16
+				consumer.IsRunning = true
+
+				return tlv, ShmConsumerOk
 			}
 		}
 	}

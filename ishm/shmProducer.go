@@ -140,7 +140,6 @@ func GetCtx(shmparam CreateSHMParam) (*UpdateContent, error) {
 		log.Fatal(err)
 		return nil, err
 	}
-	log.Print(sm)
 	data := make([]byte, sizeOfTagTLVStruct)
 	pos, err := sm.Read(data)
 	if err != nil {
@@ -150,9 +149,9 @@ func GetCtx(shmparam CreateSHMParam) (*UpdateContent, error) {
 	log.Println(pos)
 	tlv := BytesToTagTLVStruct(data)
 	ctd := new(UpdateContent)
-	ctd.Topic = string(tlv.Topic[:])
-	ctd.Content = string(tlv.Value[:])
-	ctd.EventType = string(tlv.EventType[:])
+	ctd.Topic = byteArrayToString(tlv.Topic[:],int(tlv.TopicLen))
+	ctd.Content = byteArrayToString(tlv.Value[:],int(tlv.Len))
+	ctd.EventType = byteArrayToString(tlv.EventType[:],int(tlv.EventTypeLen))
 
 	return ctd, nil
 }
