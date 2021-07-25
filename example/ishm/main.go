@@ -81,7 +81,7 @@ type TestJsonData struct {
 	Content string `json:"content"`
 }
 func testProducer()  {
-	td:=TestJsonData{"xxx",12,"yyyy"}
+	td:=TestJsonData{"x要针对哪个 proto 文件生成接口代码xx",12,"yy要针对哪个 proto 文件生成接口代码yy"}
 	od,err:=json.Marshal(td)
 	if err != nil {
 		log.Fatal(err)
